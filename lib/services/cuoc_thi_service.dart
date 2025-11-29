@@ -7,24 +7,13 @@ class CuocThiService {
   Future<List<CuocThi>> getAll() async {
     final response = await _api.get('/cuocthi');
 
-    dynamic rawData;
-
-    // Nếu Laravel trả về dạng Map có key "data"
-    if (response is Map<String, dynamic> && response.containsKey('data')) {
-      rawData = response['data'];
-    }
-    // Nếu Laravel trả về trực tiếp mảng JSON
-    else if (response is List) {
-      rawData = response;
-    }
-    // Nếu không phải List hoặc Map => không hợp lệ
-    else {
+    if (response is Map<String, dynamic> && response['data'] != null) {
+      final rawData = response['data'] as List;
+      return rawData.map((json) => CuocThi.fromJson(json)).toList();
+    } else if (response is List) {
+      return response.map((json) => CuocThi.fromJson(json)).toList();
+    } else {
       return [];
     }
-
-    // Chuyển sang danh sách CuocThi
-    return List<CuocThi>.from(
-      (rawData as List).map((json) => CuocThi.fromJson(json)),
-    );
   }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/home.dart';
-import 'screens/cuoc_thi.dart';
+import 'screens/events/event_list.dart';
 import 'screens/navigation.dart';
 
 void main() {

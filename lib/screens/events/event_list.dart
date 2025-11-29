@@ -1,0 +1,642 @@
+import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../../models/CuocThi.dart';
+import '../../../services/cuoc_thi_service.dart';
+import 'package:academic_activities_mobile/cores/widgets/button.dart';
+import 'package:academic_activities_mobile/cores/widgets/app_select_field.dart';
+import 'package:academic_activities_mobile/screens/events/event_detail.dart';
+
+class CuocThiScreen extends StatefulWidget {
+  const CuocThiScreen({super.key});
+
+  @override
+  State<CuocThiScreen> createState() => _CuocThiScreenState();
+}
+
+class _CuocThiScreenState extends State<CuocThiScreen>
+    with TickerProviderStateMixin {
+  final service = CuocThiService();
+  List<CuocThi> danhSach = [];
+  bool loading = true;
+  String? selectedFilter;
+  DateTimeRange? selectedDateRange;
+
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+
+  void _chonKhoangNgay() async {
+    final now = DateTime.now();
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(now.year + 2),
+      initialDateRange:
+          selectedDateRange ??
+          DateTimeRange(
+            start: DateTime(now.year, now.month, 1),
+            end: DateTime(now.year, now.month + 1, 0),
+          ),
+      locale: const Locale('vi', 'VN'),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Colors.blue[700]!,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        selectedDateRange = picked;
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeOut,
+    );
+    selectedFilter = null;
+    _taiDuLieu();
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _taiDuLieu() async {
+    setState(() => loading = true);
+    try {
+      final data = await service.getAll();
+      setState(() {
+        danhSach = data;
+        loading = false;
+      });
+      _fadeController.forward();
+    } catch (e) {
+      debugPrint("Lỗi tải cuộc thi: $e");
+      setState(() => loading = false);
+    }
+  }
+
+  List<CuocThi> get filteredList {
+    List<CuocThi> list = danhSach;
+
+    if (selectedFilter != null && selectedFilter != 'Tất cả') {
+      list = list.where((ct) => ct.trangThaiLabel == selectedFilter).toList();
+    }
+
+    if (selectedDateRange != null) {
+      final start = selectedDateRange!.start;
+      final end = selectedDateRange!.end;
+
+      list = list.where((ct) {
+        if (ct.thoiGianBatDau == null) return false;
+        final date = DateTime.parse(ct.thoiGianBatDau!);
+        return date.isAfter(start.subtract(const Duration(days: 1))) &&
+            date.isBefore(end.add(const Duration(days: 1)));
+      }).toList();
+    }
+
+    return list;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          _buildHeroSection(),
+          _buildFilterSection(),
+          if (loading)
+            const SliverFillRemaining(
+              child: Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF667EEA)),
+                ),
+              ),
+            )
+          else if (filteredList.isEmpty)
+            _buildEmptyState()
+          else
+            _buildCuocThiList(),
+        ],
+      ),
+    );
+  }
+
+  // 🌟 HERO SECTION
+  Widget _buildHeroSection() {
+    return SliverAppBar(
+      expandedHeight: 340,
+      floating: false,
+      pinned: true,
+      elevation: 0,
+      flexibleSpace: FlexibleSpaceBar(
+        background: Stack(
+          fit: StackFit.expand,
+          children: [
+            // 🌄 Nền pattern
+            Image.asset(
+              'assets/images/patterns/pattern1.jpg',
+              fit: BoxFit.cover,
+            ),
+
+            // 🟦 Lớp gradient phủ màu xanh dương
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color.fromARGB(240, 0, 132, 255),
+                    Color.fromARGB(179, 27, 125, 204),
+                  ],
+                ),
+              ),
+            ),
+
+            // 🌫️ Lớp phủ mờ nhẹ để chữ dễ đọc
+            Container(color: Colors.black.withOpacity(0.15)),
+
+            // 🌟 Nội dung chính
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    // Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.25),
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          FaIcon(
+                            FontAwesomeIcons.trophy,
+                            size: 14,
+                            color: Color(0xFFB2EBF2),
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            "Cuộc thi Học thuật",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Tiêu đề gradient
+                    Text.rich(
+                      TextSpan(
+                        children: [
+                          const TextSpan(
+                            text: "Đấu trường ",
+                            style: TextStyle(
+                              fontSize: 30,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                            ),
+                          ),
+                          TextSpan(
+                            text: "Tri thức & Sáng tạo",
+                            style: TextStyle(
+                              fontSize: 30,
+                              fontWeight: FontWeight.w900,
+                              foreground: Paint()
+                                ..shader = const LinearGradient(
+                                  colors: [
+                                    Color(0xFFB2EBF2),
+                                    Color(0xFFBBDEFB),
+                                    Color(0xFFB2EBF2),
+                                  ],
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                ).createShader(Rect.fromLTWH(0, 0, 200, 70)),
+                            ),
+                          ),
+                        ],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+
+                    const SizedBox(height: 12),
+                    const Text(
+                      "Nơi sinh viên Công nghệ Thông tin thể hiện tài năng, khám phá đam mê và kiến tạo tương lai công nghệ.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                        height: 1.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // 📊 Stats
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildStat("12+", "Cuộc thi"),
+                        const SizedBox(width: 32),
+                        _buildStat("2.5K+", "Sinh viên tham gia"),
+                        const SizedBox(width: 32),
+                        _buildStat("80+", "Giải thưởng"),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterSection() {
+    return SliverToBoxAdapter(
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: AppSelectField(
+                    value: selectedFilter, // null => sẽ hiển thị hint
+                    hint: "Trạng thái", // 👈 text khi chưa chọn
+                    items: [
+                      'Tất cả',
+                      'Đang diễn ra',
+                      'Sắp diễn ra',
+                      'Đã kết thúc',
+                    ],
+                    onChanged: (v) => setState(() => selectedFilter = v),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _chonKhoangNgay,
+                    child: Container(
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: selectedDateRange == null
+                              ? const Color(0xFFE5E7EB)
+                              : const Color(0xFF2563EB),
+                          width: 1.4,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.08),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          const FaIcon(
+                            FontAwesomeIcons.calendarDays,
+                            size: 14,
+                            color: Color(0xFF6B7280),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              selectedDateRange == null
+                                  ? "Khoảng ngày"
+                                  : "${_formatDate(selectedDateRange!.start)} - ${_formatDate(selectedDateRange!.end)}",
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1F2937),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Helper function (nếu chưa có)
+  String _formatDate(DateTime date) {
+    return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
+  }
+
+  Widget _buildCuocThiList() {
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final ct = filteredList[index];
+          return FadeTransition(
+            opacity: _fadeAnimation,
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: 1.0),
+              duration: Duration(milliseconds: 400 + (index * 100)),
+              curve: Curves.easeOut,
+              builder: (context, value, child) {
+                return Transform.translate(
+                  offset: Offset(0, 20 * (1 - value)),
+                  child: Opacity(opacity: value, child: child),
+                );
+              },
+              child: _buildCuocThiCard(ct),
+            ),
+          );
+        }, childCount: filteredList.length),
+      ),
+    );
+  }
+
+  Widget _buildStat(String value, String label) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(color: Color(0xFFBBDEFB), fontSize: 13),
+        ),
+      ],
+    );
+  }
+
+  // 🎯 THẺ CUỘC THI
+  Widget _buildCuocThiCard(CuocThi ct) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 🌄 Header có trạng thái & chi phí
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
+                ),
+                child: Image.asset(
+                  'assets/images/home/banner1.jpg',
+                  height: 140,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  color: Colors.black.withOpacity(0.25),
+                  colorBlendMode: BlendMode.darken,
+                ),
+              ),
+              Positioned(
+                top: 10,
+                left: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: ct.statusColor.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.circle, size: 8, color: Colors.white),
+                      const SizedBox(width: 6),
+                      Text(
+                        ct.trangThaiLabel ?? 'Không xác định',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 10,
+                right: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Row(
+                    children: [
+                      const FaIcon(
+                        FontAwesomeIcons.trophy,
+                        size: 12,
+                        color: Colors.amber,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        ct.chiPhiThucTe != null
+                            ? '${ct.chiPhiThucTe!.toStringAsFixed(0)} VNĐ'
+                            : 'Chưa có',
+                        style: const TextStyle(
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // 🧾 Nội dung
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  ct.tenCuocThi ?? 'Không có tên',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+                if (ct.moTa != null && ct.moTa!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      ct.moTa!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.grey, fontSize: 13),
+                    ),
+                  ),
+
+                Divider(color: Colors.grey[300], thickness: 1, height: 30),
+                // ⏰ Thời gian + người tham gia
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.calendar_today,
+                      size: 14,
+                      color: Colors.blue,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      ct.thoiGianBatDau != null && ct.thoiGianKetThuc != null
+                          ? '${_formatDate(DateTime.parse(ct.thoiGianBatDau!))} - ${_formatDate(DateTime.parse(ct.thoiGianKetThuc!))}'
+                          : 'Chưa xác định',
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                    const Spacer(),
+                    const Icon(Icons.people, size: 14, color: Colors.purple),
+                    const SizedBox(width: 4),
+                    Text(
+                      "${ct.soLuongDangKy ?? 0}+ thí sinh",
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: DetailButton(
+                    label: 'Xem chi tiết',
+                    icon: FontAwesomeIcons.arrowRight,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EventDetailScreen(
+                            event: CuocThi(
+                              tenCuocThi: ct.tenCuocThi,
+                              moTa:
+                                  ct.moTa ??
+                                  "Đây là cuộc thi học thuật dành cho sinh viên CNTT.",
+                              mucDich:
+                                  ct.mucDich ??
+                                  "Phát triển kỹ năng lập trình và teamwork.",
+                              thoiGianBatDau:
+                                  ct.thoiGianBatDau ?? "2025-05-15T08:00:00",
+                              thoiGianKetThuc:
+                                  ct.thoiGianKetThuc ?? "2025-05-15T17:00:00",
+                              diaDiem:
+                                  ct.diaDiem ?? "Hội trường E - Đại học CNTT",
+                              doiTuongThamGia:
+                                  ct.doiTuongThamGia ?? "Sinh viên khoa CNTT",
+                              soLuongDangKy: ct.soLuongDangKy ?? 0,
+                              duTruKinhPhi: ct.duTruKinhPhi ?? 12000000,
+                              trangThaiLabel:
+                                  ct.trangThaiLabel ?? "Đang diễn ra",
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  SliverFillRemaining _buildEmptyState() {
+    return const SliverFillRemaining(
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            FaIcon(FontAwesomeIcons.trophy, size: 70, color: Color(0xFFB0BEC5)),
+            SizedBox(height: 12),
+            Text(
+              "Không có cuộc thi nào",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey,
+              ),
+            ),
+            SizedBox(height: 6),
+            Text(
+              "Hãy thử thay đổi tiêu chí lọc.",
+              style: TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

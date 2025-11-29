@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'home.dart';
-import 'cuoc_thi.dart';
-import 'ket_qua.dart';
-import 'profile.dart';
+import 'events/event_list.dart';
+import 'results/result_list.dart';
+import 'profile/profile.dart';
 
 class Navigation extends StatefulWidget {
   const Navigation({super.key});

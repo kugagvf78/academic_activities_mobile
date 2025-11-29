@@ -43,24 +43,29 @@ class CuocThi {
 
   factory CuocThi.fromJson(Map<String, dynamic> json) {
     return CuocThi(
-      maCuocThi: json['macuocthi'],
-      tenCuocThi: json['tencuocthi'],
-      loaiCuocThi: json['loaicuocthi'],
-      moTa: json['mota'],
-      mucDich: json['mucdich'],
-      doiTuongThamGia: json['doituongthamgia'],
-      thoiGianBatDau: json['thoigianbatdau'],
-      thoiGianKetThuc: json['thoigianketthuc'],
-      diaDiem: json['diadiem'],
-      soLuongThanhVien: json['soluongthanhvien'],
-      soLuongDangKy: json['soluongdangky'],
-      hinhThucThamGia: json['hinhthucthamgia'],
-      trangThaiLabel: json['trangthai_label'],
-      duTruKinhPhi: (json['dutrukinhphi'] as num?)?.toDouble(),
-      chiPhiThucTe: (json['chiphithucte'] as num?)?.toDouble(),
-      maBoMon: json['mabomon'],
-      ngayTao: json['ngaytao'],
-      ngayCapNhat: json['ngaycapnhat'],
+      maCuocThi: json['macuocthi']?.toString(),
+      tenCuocThi: json['tencuocthi']?.toString(),
+      loaiCuocThi: json['loaicuocthi']?.toString(),
+      moTa: json['mota']?.toString(),
+      mucDich: json['mucdich']?.toString(),
+      doiTuongThamGia: json['doituongthamgia']?.toString(),
+      thoiGianBatDau: json['thoigianbatdau']?.toString(),
+      thoiGianKetThuc: json['thoigianketthuc']?.toString(),
+      diaDiem: json['diadiem']?.toString(),
+      soLuongThanhVien: int.tryParse(
+        json['soluongthanhvien']?.toString() ?? '0',
+      ),
+      soLuongDangKy: int.tryParse(json['soluongdangky']?.toString() ?? '0'),
+      hinhThucThamGia: json['hinhthucthamgia']?.toString(),
+
+      // ✅ Đúng key của API
+      trangThaiLabel: json['status_label']?.toString(),
+
+      duTruKinhPhi: double.tryParse(json['dutrukinhphi']?.toString() ?? '0.0'),
+      chiPhiThucTe: double.tryParse(json['chiphithucte']?.toString() ?? '0.0'),
+      maBoMon: json['mabomon']?.toString(),
+      ngayTao: json['ngaytao']?.toString(),
+      ngayCapNhat: json['ngaycapnhat']?.toString(),
     );
   }
 
@@ -76,6 +81,7 @@ class CuocThi {
       'thoigianketthuc': thoiGianKetThuc,
       'diadiem': diaDiem,
       'soluongthanhvien': soLuongThanhVien,
+      'soluongdangky': soLuongDangKy,
       'hinhthucthamgia': hinhThucThamGia,
       'trangthai_label': trangThaiLabel,
       'dutrukinhphi': duTruKinhPhi,

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 /// 🔹 Button chính — Nút nền màu (Elevated)
 class PrimaryButton extends StatelessWidget {
@@ -8,7 +7,7 @@ class PrimaryButton extends StatelessWidget {
   final VoidCallback onPressed;
   final Color? color;
   final bool isSmall;
-
+  final double? borderRadius;
   const PrimaryButton({
     super.key,
     required this.label,
@@ -16,6 +15,7 @@ class PrimaryButton extends StatelessWidget {
     required this.onPressed,
     this.color,
     this.isSmall = false,
+    this.borderRadius,
   });
 
   @override
@@ -38,7 +38,7 @@ class PrimaryButton extends StatelessWidget {
           vertical: isSmall ? 8 : 14,
         ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(borderRadius ?? 30), // ✅
         ),
         elevation: 2,
       ),
@@ -46,13 +46,14 @@ class PrimaryButton extends StatelessWidget {
   }
 }
 
-
 /// 🔹 Button viền — Nút outline (Outlined)
 class OutlineButtonCustom extends StatelessWidget {
   final String label;
   final IconData icon;
   final VoidCallback onPressed;
   final Color? color;
+  final double? borderRadius;
+  final bool bgColor; // 
 
   const OutlineButtonCustom({
     super.key,
@@ -60,28 +61,35 @@ class OutlineButtonCustom extends StatelessWidget {
     required this.icon,
     required this.onPressed,
     this.color,
+    this.borderRadius,
+    this.bgColor = false, 
   });
 
   @override
   Widget build(BuildContext context) {
+    final Color baseColor = color ?? Colors.blue[700]!;
+
     return OutlinedButton.icon(
       onPressed: onPressed,
-      icon: Icon(icon, size: 16, color: color ?? Colors.blue[700]),
+      icon: Icon(icon, size: 16, color: baseColor),
       label: Text(
         label,
         style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w600,
-          color: color ?? Colors.blue[700],
+          color: baseColor,
         ),
       ),
       style: OutlinedButton.styleFrom(
-        side: BorderSide(color: color ?? Colors.blue[700]!, width: 1.5),
+        side: BorderSide(color: baseColor, width: 1.3),
+        backgroundColor: bgColor
+            ? baseColor.withValues(alpha: 0.15) // 
+            : Colors.white, //
         padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(borderRadius ?? 30),
         ),
-        foregroundColor: color ?? Colors.blue[700],
+        foregroundColor: baseColor,
       ),
     );
   }
@@ -133,11 +141,7 @@ class DetailButton extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Icon(
-            icon,
-            size: isSmall ? 12 : 16,
-            color: Colors.white,
-          ),
+          Icon(icon, size: isSmall ? 12 : 16, color: Colors.white),
         ],
       ),
     );
