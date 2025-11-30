@@ -1,3 +1,4 @@
+import 'package:academic_activities_mobile/screens/auth/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -80,8 +81,9 @@ class ProfileScreen extends StatelessWidget {
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFF2563EB)
-                                        .withOpacity(0.4),
+                                    color: const Color(
+                                      0xFF2563EB,
+                                    ).withOpacity(0.4),
                                     blurRadius: 20,
                                     offset: const Offset(0, 8),
                                   ),
@@ -258,10 +260,7 @@ class ProfileScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.25),
         borderRadius: BorderRadius.circular(25),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.4),
-          width: 1.5,
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -273,11 +272,7 @@ class ProfileScreen extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          FaIcon(
-            icon,
-            size: 12,
-            color: Colors.white,
-          ),
+          FaIcon(icon, size: 12, color: Colors.white),
           const SizedBox(width: 6),
           Text(
             text,
@@ -355,11 +350,7 @@ class ProfileScreen extends StatelessWidget {
               color: color.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: FaIcon(
-              icon,
-              color: color,
-              size: 18,
-            ),
+            child: FaIcon(icon, color: color, size: 18),
           ),
           const SizedBox(height: 10),
           Text(
@@ -457,10 +448,7 @@ class ProfileScreen extends StatelessWidget {
         return;
     }
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => screen),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (context) => screen));
   }
 
   Widget _buildMenuItem({
@@ -534,83 +522,90 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildLogoutButton(BuildContext context) {
-  return Container(
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(20),
-      gradient: LinearGradient(
-        colors: [
-          const Color(0xFFEF4444).withOpacity(0.1),
-          const Color(0xFFDC2626).withOpacity(0.05),
-        ],
-      ),
-      border: Border.all(
-        color: const Color(0xFFEF4444).withOpacity(0.3),
-        width: 1.5,
-      ),
-    ),
-    child: Material(
-      color: Colors.transparent,
-      child: InkWell(
+    return Container(
+      decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        onTap: () {
-          // Show confirmation dialog
-          showDialog(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              title: const Text('Xác nhận đăng xuất'),
-              content: const Text('Bạn có chắc chắn muốn đăng xuất?'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Hủy'),
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFFEF4444).withOpacity(0.1),
+            const Color(0xFFDC2626).withOpacity(0.05),
+          ],
+        ),
+        border: Border.all(
+          color: const Color(0xFFEF4444).withOpacity(0.3),
+          width: 1.5,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () {
+            // Show confirmation dialog
+            showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    // Thực hiện đăng xuất
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFEF4444),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                title: const Text('Xác nhận đăng xuất'),
+                content: const Text('Bạn có chắc chắn muốn đăng xuất?'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Hủy'),
                   ),
-                  child: const Text('Đăng xuất'),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+
+                      // Chuyển sang màn hình login và xoá toàn bộ stack
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                        (route) => false,
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFEF4444),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Đăng xuất'),
+                  ),
+                ],
+              ),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                FaIcon(
+                  FontAwesomeIcons.rightFromBracket,
+                  size: 18,
+                  color: Color(0xFFEF4444),
+                ),
+                SizedBox(width: 12),
+                Text(
+                  'Đăng xuất',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFFEF4444),
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.3,
+                  ),
                 ),
               ],
             ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              FaIcon(
-                FontAwesomeIcons.rightFromBracket,
-                size: 18,
-                color: Color(0xFFEF4444),
-              ),
-              SizedBox(width: 12),
-              Text(
-                'Đăng xuất',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFFEF4444),
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.3,
-                ),
-              ),
-            ],
           ),
         ),
       ),
-    ),
-  );
-}}
+    );
+  }
+}
 
 class _MenuItemData {
   final IconData icon;

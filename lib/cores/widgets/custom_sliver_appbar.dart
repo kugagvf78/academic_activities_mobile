@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class CustomHeroSliverAppBar extends StatelessWidget {
   final String title;
   final String? description;
   final String imagePath;
   final String? statusText;
-  final double height;
+  final double? height;
   final Color? statusColor;
   final List<Widget> metaItems;
-
-  final Widget? action; 
+  final Widget? action;
 
   const CustomHeroSliverAppBar({
     super.key,
@@ -18,62 +16,71 @@ class CustomHeroSliverAppBar extends StatelessWidget {
     required this.imagePath,
     required this.metaItems,
     this.description,
-    required this.height,
+    this.height,
     this.statusText,
     this.statusColor,
-    this.action, 
+    this.action,
   });
 
   @override
   Widget build(BuildContext context) {
+    final double calculatedHeight = height ?? _calculateDynamicHeight(context);
+
     return SliverAppBar(
-      expandedHeight: height,
+      expandedHeight: calculatedHeight,
+      collapsedHeight: kToolbarHeight,
       pinned: true,
-      elevation: 0,
       backgroundColor: Colors.blue[700],
-
-      title: Text(
-        title,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w700,
-          fontSize: 17,
-        ),
-      ),
-
-      centerTitle: true,
+      elevation: 0,
 
       flexibleSpace: LayoutBuilder(
         builder: (context, constraints) {
-          bool collapsed = constraints.biggest.height <= kToolbarHeight + 30;
+          final double currentHeight = constraints.biggest.height;
+          final double minHeight =
+              kToolbarHeight + MediaQuery.of(context).padding.top;
+          final bool collapsed = currentHeight <= minHeight + 20;
 
           return FlexibleSpaceBar(
-            titlePadding: EdgeInsets.zero,
             centerTitle: true,
-            title: collapsed ? null : Container(),
+            titlePadding: EdgeInsets.only(
+              bottom: 16,
+              top: MediaQuery.of(context).padding.top,
+            ),
+
+            title: AnimatedOpacity(
+              opacity: collapsed ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 200),
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+
             background: _buildBackground(context),
           );
         },
       ),
 
-      leading: Container(
-        margin: const EdgeInsets.only(left: 12),
+      leading: Padding(
+        padding: const EdgeInsets.only(left: 12),
         child: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: Colors.white, size: 18),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+            size: 18,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
 
       actions: action != null
-          ? [
-              Container(
-                margin: const EdgeInsets.only(right: 12),
-                child: action!,
-              )
-            ]
+          ? [Padding(padding: const EdgeInsets.only(right: 12), child: action!)]
           : null,
     );
   }
@@ -102,8 +109,6 @@ class CustomHeroSliverAppBar extends StatelessWidget {
           ),
         ),
 
-        Container(color: Colors.black.withOpacity(0.15)),
-
         SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -112,7 +117,6 @@ class CustomHeroSliverAppBar extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (statusText != null) _buildStatusTag(),
-
                 const SizedBox(height: 16),
 
                 Text(
@@ -121,7 +125,6 @@ class CustomHeroSliverAppBar extends StatelessWidget {
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
-                    height: 1.2,
                   ),
                 ),
 
@@ -132,19 +135,13 @@ class CustomHeroSliverAppBar extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 15,
                       color: Colors.white70,
-                      fontWeight: FontWeight.w700,
-                      height: 1.6,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
 
                 const SizedBox(height: 20),
-
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 8,
-                  children: metaItems,
-                ),
+                Wrap(spacing: 16, runSpacing: 8, children: metaItems),
               ],
             ),
           ),
@@ -161,34 +158,69 @@ class CustomHeroSliverAppBar extends StatelessWidget {
         decoration: BoxDecoration(
           color: statusColor?.withOpacity(0.3) ?? Colors.white24,
           borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: statusColor ?? Colors.white,
-            width: 1.6,
-          ),
+          border: Border.all(color: statusColor ?? Colors.white, width: 1.6),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
-            ),
+            const CircleAvatar(radius: 4, backgroundColor: Colors.white),
             const SizedBox(width: 6),
             Text(
               statusText!,
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,
-                fontSize: 13.5,
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  double _calculateDynamicHeight(BuildContext context) {
+    final safeTop = MediaQuery.of(context).padding.top;
+    final width = MediaQuery.of(context).size.width - 48;
+
+    double total = safeTop + 24;
+
+    final titlePainter = TextPainter(
+      text: TextSpan(
+        text: title,
+        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+      ),
+      maxLines: 10,
+      textDirection: TextDirection.ltr,
+    )..layout(maxWidth: width);
+
+    total += titlePainter.height + 10;
+
+    if (statusText != null) {
+      total += 40;
+    }
+
+    if (description != null && description!.isNotEmpty) {
+      final descPainter = TextPainter(
+        text: TextSpan(
+          text: description!,
+          style: const TextStyle(fontSize: 15, height: 1.4),
+        ),
+        maxLines: 10,
+        textDirection: TextDirection.ltr,
+      )..layout(maxWidth: width);
+
+      total += descPainter.height + 10;
+    }
+
+    if (metaItems.isNotEmpty) {
+      int itemsPerRow = (width / 150).floor().clamp(1, 5);
+      int rows = (metaItems.length / itemsPerRow).ceil();
+
+      total += rows * 36 + 10;
+    }
+
+    total += 24;
+
+    return total.clamp(280.0, 620.0);
   }
 }

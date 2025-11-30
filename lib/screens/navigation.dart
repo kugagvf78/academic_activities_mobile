@@ -1,6 +1,8 @@
+import 'package:academic_activities_mobile/screens/news/news_list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 import 'home.dart';
 import 'events/event_list.dart';
 import 'results/result_list.dart';
@@ -9,78 +11,39 @@ import 'profile/profile.dart';
 class Navigation extends StatefulWidget {
   const Navigation({super.key});
 
+  static void changeTab(int index) => _NavigationState._instance?._onTap(index);
+
   @override
   State<Navigation> createState() => _NavigationState();
 }
 
-class _NavigationState extends State<Navigation> with TickerProviderStateMixin {
+class _NavigationState extends State<Navigation> {
+  static _NavigationState? _instance;
   int _currentIndex = 0;
-  late List<AnimationController> _controllers;
-  late List<Animation<double>> _animations;
 
   final List<Widget> _screens = const [
     HomeScreen(),
+    NewsScreen(), 
     CuocThiScreen(),
     KetQuaScreen(),
     ProfileScreen(),
   ];
 
-  final List<NavItemData> _navItems = const [
-    NavItemData(
-      icon: FontAwesomeIcons.house,
-      label: 'Trang chủ',
-      color: Color(0xFF667EEA),
-    ),
-    NavItemData(
-      icon: FontAwesomeIcons.trophy,
-      label: 'Cuộc thi',
-      color: Color(0xFFF093FB),
-    ),
-    NavItemData(
-      icon: FontAwesomeIcons.medal,
-      label: 'Kết quả',
-      color: Color(0xFF4FACFE),
-    ),
-    NavItemData(
-      icon: FontAwesomeIcons.user,
-      label: 'Hồ sơ',
-      color: Color(0xFF43E97B),
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
-    _controllers = List.generate(
-      _navItems.length,
-      (index) => AnimationController(
-        duration: const Duration(milliseconds: 350),
-        vsync: this,
-      ),
-    );
-
-    _animations = _controllers
-        .map((controller) => Tween(begin: 0.9, end: 1.2).animate(
-              CurvedAnimation(parent: controller, curve: Curves.easeOutBack),
-            ))
-        .toList();
-
-    _controllers[0].forward();
+    _instance = this;
   }
 
   @override
   void dispose() {
-    for (var controller in _controllers) {
-      controller.dispose();
-    }
+    _instance = null;
     super.dispose();
   }
 
   void _onTap(int index) {
     if (_currentIndex != index) {
-      HapticFeedback.mediumImpact();
-      _controllers[_currentIndex].reverse();
-      _controllers[index].forward();
+      HapticFeedback.selectionClick();
       setState(() => _currentIndex = index);
     }
   }
@@ -90,94 +53,179 @@ class _NavigationState extends State<Navigation> with TickerProviderStateMixin {
     return Scaffold(
       extendBody: true,
       body: _screens[_currentIndex],
-      bottomNavigationBar: Container(
-        margin: const EdgeInsets.all(16),
-        height: 75,
-        decoration: BoxDecoration(
-          color: Colors.white, // nền trắng, không blur
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 30,
-              offset: const Offset(0, 10),
-            ),
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: _navItems.asMap().entries.map((entry) {
-            int index = entry.key;
-            NavItemData item = entry.value;
-            bool isSelected = _currentIndex == index;
+      bottomNavigationBar: _buildBottomNav(),
+    );
+  }
 
-            return Expanded(
+  Widget _buildBottomNav() {
+    return SizedBox(
+      height: 80,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // Nền có lỗ lõm
+          Positioned.fill(child: CustomPaint(painter: NavBarPainter())),
+
+          // Menu items
+          Positioned.fill(
+            child: Row(
+              children: [
+                _buildNavItem(
+                  index: 0,
+                  icon: "assets/icons/home.png",
+                  iconActive: "assets/icons/home_active.png",
+                  label: "Trang chủ",
+                ),
+                _buildNavItem(
+                  index: 1,
+                  icon: "assets/icons/notification.png",
+                  iconActive: "assets/icons/notification_active.png",
+                  label: "Tin tức",
+                ),
+
+                Expanded(child: SizedBox()), // khoảng trống ở giữa
+
+                _buildNavItem(
+                  index: 3,
+                  icon: "assets/icons/award.png",
+                  iconActive: "assets/icons/award_active.png",
+                  label: "Kết quả",
+                ),
+                _buildNavItem(
+                  index: 4,
+                  icon: "assets/icons/user.png",
+                  iconActive: "assets/icons/user_active.png",
+                  label: "Hồ sơ",
+                ),
+              ],
+            ),
+          ),
+
+          // Nút giữa
+          Positioned(
+            top: -20,
+            left: 0,
+            right: 0,
+            child: Center(
               child: GestureDetector(
-                onTap: () => _onTap(index),
-                behavior: HitTestBehavior.opaque,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ScaleTransition(
-                      scale: _animations[index],
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          gradient: isSelected
-                              ? LinearGradient(
-                                  colors: [
-                                    item.color.withOpacity(0.2),
-                                    item.color.withOpacity(0.05),
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                )
-                              : null,
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: FaIcon(
-                          item.icon,
-                          size: 22,
-                          color:
-                              isSelected ? item.color : Colors.grey.shade400,
-                        ),
-                      ),
+                onTap: () => _onTap(2),
+                child: Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0088FF), Color(0xFF0066CC)],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
                     ),
-                    const SizedBox(height: 4),
-                    AnimatedDefaultTextStyle(
-                      duration: const Duration(milliseconds: 200),
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color:
-                            isSelected ? item.color : Colors.grey.shade400,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.blue.withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: Offset(0, 4),
                       ),
-                      child: Text(item.label),
+                    ],
+                  ),
+                  child: Center(
+                    child: Image.asset(
+                      "assets/icons/event.png",
+                      width: 30,
+                      height: 30,
                     ),
-                  ],
+                  ),
                 ),
               ),
-            );
-          }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavItem({
+    required int index,
+    required String icon,
+    required String iconActive,
+    required String label,
+  }) {
+    bool isSelected = _currentIndex == index;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => _onTap(index),
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(isSelected ? iconActive : icon, width: 28, height: 28),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected
+                    ? const Color(0xFF0088FF)
+                    : Colors.grey.shade600,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class NavItemData {
-  final IconData icon;
-  final String label;
-  final Color color;
+class NavBarPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final bgPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
 
-  const NavItemData({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
+    final borderPaint = Paint()
+      ..color = const Color.fromARGB(255, 210, 213, 218) // viền xám nhẹ
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+
+    final path = Path();
+
+    const notchRadius = 38.0;
+    final center = size.width / 2;
+
+    path.moveTo(0, 0);
+    path.lineTo(center - notchRadius - 20, 0);
+
+    // Vòng lõm lên
+    path.quadraticBezierTo(
+      center - notchRadius, 0,
+      center - notchRadius + 10, 20,
+    );
+
+    path.arcToPoint(
+      Offset(center + notchRadius - 10, 20),
+      radius: const Radius.circular(50),
+      clockwise: false,
+    );
+
+    path.quadraticBezierTo(
+      center + notchRadius, 0,
+      center + notchRadius + 20, 0,
+    );
+
+    path.lineTo(size.width, 0);
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+
+    // Đổ nền
+    canvas.drawPath(path, bgPaint);
+
+    // Viền xám nhẹ
+    canvas.drawPath(path, borderPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

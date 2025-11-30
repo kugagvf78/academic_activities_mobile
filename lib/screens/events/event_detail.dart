@@ -1,5 +1,9 @@
 import 'package:academic_activities_mobile/cores/widgets/custom_sliver_appbar.dart';
+import 'package:academic_activities_mobile/cores/widgets/info_tag.dart';
 import 'package:academic_activities_mobile/cores/widgets/section_tag.dart';
+import 'package:academic_activities_mobile/screens/events/cheer_register.dart';
+import 'package:academic_activities_mobile/screens/events/event_register.dart';
+import 'package:academic_activities_mobile/screens/events/support_register.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../models/CuocThi.dart';
@@ -27,7 +31,7 @@ class EventDetailScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 12),
-                    _buildActionButtons(),
+                    _buildActionButtons(context),
                     const SizedBox(height: 22),
                     _buildMainContent(context),
                     const SizedBox(height: 40),
@@ -44,7 +48,6 @@ class EventDetailScreen extends StatelessWidget {
   Widget _buildHeroSection(BuildContext context) {
     return CustomHeroSliverAppBar(
       title: event.tenCuocThi ?? "",
-      height: 430,
       description: event.moTa ?? event.mucDich,
       imagePath: "assets/images/patterns/pattern3.jpg",
 
@@ -98,7 +101,7 @@ class EventDetailScreen extends StatelessWidget {
   }
 
   // ✳️ Nút hành động - FIXED
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(BuildContext context) {
     if (event.trangThaiLabel == "Sắp diễn ra") {
       return Column(
         children: [
@@ -109,9 +112,16 @@ class EventDetailScreen extends StatelessWidget {
               label: "Đăng ký dự thi",
               icon: FontAwesomeIcons.userPlus,
               onPressed: () {
-                // TODO: Xử lý đăng ký dự thi
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => EventRegisterScreen(
+                      tenCuocThi: event.tenCuocThi ?? "",
+                      hinhThuc: event.hinhThucThamGia ?? "CaNhan",
+                    ),
+                  ),
+                );
               },
-              color: const Color(0xFF2563EB),
               borderRadius: 12,
             ),
           ),
@@ -125,7 +135,30 @@ class EventDetailScreen extends StatelessWidget {
                   label: "Đăng ký hỗ trợ",
                   icon: FontAwesomeIcons.peopleCarryBox,
                   onPressed: () {
-                    // TODO: Xử lý đăng ký hỗ trợ
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => SupportRegisterScreen(
+                          tenCuocThi: event.tenCuocThi ?? "",
+                          hoatDongs: [
+                            {
+                              "id": 1,
+                              "ten": "Hỗ trợ kỹ thuật",
+                              "thoigian": "08:00 - 12:00, 12/12/2025",
+                              "diadiem": "Hội trường A",
+                              "drl": 10,
+                            },
+                            {
+                              "id": 2,
+                              "ten": "Hỗ trợ truyền thông",
+                              "thoigian": "13:00 - 17:00, 12/12/2025",
+                              "diadiem": "Sảnh khu A",
+                              "drl": 8,
+                            },
+                          ],
+                        ),
+                      ),
+                    );
                   },
                   color: const Color.fromARGB(255, 94, 47, 204),
                   bgColor: true,
@@ -138,7 +171,23 @@ class EventDetailScreen extends StatelessWidget {
                   label: "Đăng ký cổ vũ",
                   icon: FontAwesomeIcons.handsClapping,
                   onPressed: () {
-                    // TODO: Xử lý đăng ký cổ vũ
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CheerRegisterScreen(
+                          tenCuocThi: event.tenCuocThi ?? "",
+                          hoatDongs: [
+                            {
+                              "id": 1,
+                              "ten": "Cổ vũ vòng chung kết",
+                              "thoigian": "14:00 - 17:00, 22/12/2025",
+                              "diadiem": "Hội trường lớn",
+                              "drl": 5,
+                            },
+                          ],
+                        ),
+                      ),
+                    );
                   },
                   color: const Color.fromARGB(255, 4, 165, 111),
                   bgColor: true,
@@ -378,12 +427,10 @@ class EventDetailScreen extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 10),
-                SectionTag(
-                  label:
+                InfoTag(
+                  text:
                       'Tất cả thí sinh vào vòng chung kết đều nhận Giấy chứng nhận tham gia.',
                   color: Colors.blue.shade500,
-                  bgColor: true,
-                  borderRadius: 10,
                   icon: FontAwesomeIcons.circleExclamation,
                 ),
               ],

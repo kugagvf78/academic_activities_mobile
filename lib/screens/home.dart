@@ -271,7 +271,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
+                  colors: [Colors.transparent, Colors.black.withOpacity(0.95)],
                 ),
               ),
             ),
@@ -292,13 +292,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   Text(
                     event['desc']!,
-                    style: const TextStyle(fontSize: 13, color: Colors.white70),
+                    style: const TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 10),
                   PrimaryButton(
                     label: "Xem chi tiết",
                     icon: FontAwesomeIcons.arrowRight,
-                    color: Colors.blue[600],
                     isSmall: true, // 👈 làm nút gọn trong card
                     onPressed: () {},
                   ),

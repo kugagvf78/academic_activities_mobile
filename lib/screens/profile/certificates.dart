@@ -1,3 +1,5 @@
+import 'package:academic_activities_mobile/cores/widgets/appbar.dart';
+import 'package:academic_activities_mobile/screens/navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -8,10 +10,15 @@ class CertificatesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        title: const Text('Chứng nhận'),
-        backgroundColor: const Color(0xFF2563EB),
-        elevation: 0,
+      appBar: AppBarWidget(
+        title: "Chứng Nhận",
+        action: IconButton(
+          icon: const Icon(Icons.home_rounded, color: Colors.white),
+          onPressed: () {
+            Navigator.popUntil(context, (route) => route.isFirst);
+            Navigation.changeTab(0);  
+          },
+        ),
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),

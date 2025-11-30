@@ -1,46 +1,63 @@
 import 'package:flutter/material.dart';
 
 /// 🔹 Button chính — Nút nền màu (Elevated)
+
 class PrimaryButton extends StatelessWidget {
   final String label;
   final IconData icon;
   final VoidCallback onPressed;
-  final Color? color;
   final bool isSmall;
   final double? borderRadius;
+
   const PrimaryButton({
     super.key,
     required this.label,
     required this.icon,
     required this.onPressed,
-    this.color,
     this.isSmall = false,
     this.borderRadius,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon, size: isSmall ? 12 : 16, color: Colors.white),
-      label: Text(
-        label,
-        style: TextStyle(
-          fontSize: isSmall ? 12 : 15,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
+    final radius = BorderRadius.circular(borderRadius ?? 30);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: radius,
+        onTap: onPressed,
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFF2563EB),
+                Color(0xFF0EA5E9),
+              ],
+            ),
+            borderRadius: radius,
+          ),
+          padding: EdgeInsets.symmetric(
+            horizontal: isSmall ? 14 : 22,
+            vertical: isSmall ? 10 : 14,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.max,         // full width
+            mainAxisAlignment: MainAxisAlignment.center, // 🔥 icon + text vào giữa
+            children: [
+              Icon(icon, color: Colors.white, size: isSmall ? 14 : 18),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: isSmall ? 12 : 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color ?? Colors.blue[700],
-        padding: EdgeInsets.symmetric(
-          horizontal: isSmall ? 14 : 22,
-          vertical: isSmall ? 8 : 14,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(borderRadius ?? 30), // ✅
-        ),
-        elevation: 2,
       ),
     );
   }

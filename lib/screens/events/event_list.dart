@@ -146,141 +146,172 @@ class _CuocThiScreenState extends State<CuocThiScreen>
   Widget _buildHeroSection() {
     return SliverAppBar(
       expandedHeight: 340,
-      floating: false,
       pinned: true,
       elevation: 0,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            // 🌄 Nền pattern
-            Image.asset(
-              'assets/images/patterns/pattern1.jpg',
-              fit: BoxFit.cover,
-            ),
+      backgroundColor: Colors.transparent,
 
-            // 🟦 Lớp gradient phủ màu xanh dương
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color.fromARGB(240, 0, 132, 255),
-                    Color.fromARGB(179, 27, 125, 204),
-                  ],
+      // ❗ Quan trọng: Không cho SliverAppBar tự đổi màu
+      automaticallyImplyLeading: false,
+
+      flexibleSpace: LayoutBuilder(
+        builder: (context, constraints) {
+          // Khi height <= toolbarHeight + 20 → coi như collapsed
+          bool isCollapsed =
+              constraints.biggest.height <= (kToolbarHeight + 20);
+
+          return FlexibleSpaceBar(
+            centerTitle: true,
+
+            // ❗ Hiện title khi collapsed
+            title: isCollapsed
+                ? const Text(
+                    "Đấu trường Tri thức & Sáng tạo",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  )
+                : null,
+
+            // ❗ AppBar sẽ đổi màu khi collapsed
+            background: Stack(
+              fit: StackFit.expand,
+              children: [
+                // 🌄 Nền pattern
+                Image.asset(
+                  'assets/images/patterns/event_pattern.jpg',
+                  fit: BoxFit.cover,
                 ),
-              ),
-            ),
 
-            // 🌫️ Lớp phủ mờ nhẹ để chữ dễ đọc
-            Container(color: Colors.black.withOpacity(0.15)),
-
-            // 🌟 Nội dung chính
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    // Badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.25),
-                        ),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          FaIcon(
-                            FontAwesomeIcons.trophy,
-                            size: 14,
-                            color: Color(0xFFB2EBF2),
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            "Cuộc thi Học thuật",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Tiêu đề gradient
-                    Text.rich(
-                      TextSpan(
-                        children: [
-                          const TextSpan(
-                            text: "Đấu trường ",
-                            style: TextStyle(
-                              fontSize: 30,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                            ),
-                          ),
-                          TextSpan(
-                            text: "Tri thức & Sáng tạo",
-                            style: TextStyle(
-                              fontSize: 30,
-                              fontWeight: FontWeight.w900,
-                              foreground: Paint()
-                                ..shader = const LinearGradient(
-                                  colors: [
-                                    Color(0xFFB2EBF2),
-                                    Color(0xFFBBDEFB),
-                                    Color(0xFFB2EBF2),
-                                  ],
-                                  begin: Alignment.centerLeft,
-                                  end: Alignment.centerRight,
-                                ).createShader(Rect.fromLTWH(0, 0, 200, 70)),
-                            ),
-                          ),
-                        ],
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-
-                    const SizedBox(height: 12),
-                    const Text(
-                      "Nơi sinh viên Công nghệ Thông tin thể hiện tài năng, khám phá đam mê và kiến tạo tương lai công nghệ.",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                        height: 1.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // 📊 Stats
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildStat("12+", "Cuộc thi"),
-                        const SizedBox(width: 32),
-                        _buildStat("2.5K+", "Sinh viên tham gia"),
-                        const SizedBox(width: 32),
-                        _buildStat("80+", "Giải thưởng"),
+                // 🟦 Gradient phủ
+                Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color.fromARGB(240, 0, 132, 255),
+                        Color.fromARGB(179, 27, 125, 204),
                       ],
                     ),
-                  ],
+                  ),
                 ),
+
+                // 🌫️ Lớp mờ
+                Container(color: Colors.black.withOpacity(0.20)),
+
+                // ⭐ Khi expanded → Hiện nội dung lớn
+                // ⭐ Khi collapsed → Ẩn nội dung
+                AnimatedOpacity(
+                  duration: const Duration(milliseconds: 200),
+                  opacity: isCollapsed ? 0 : 1,
+                  child: _buildExpandedContent(),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildExpandedContent() {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(color: Colors.white.withOpacity(0.25)),
               ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FaIcon(
+                    FontAwesomeIcons.trophy,
+                    size: 14,
+                    color: Color(0xFFB2EBF2),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    "Cuộc thi Học thuật",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Title
+            Text.rich(
+              TextSpan(
+                children: [
+                  const TextSpan(
+                    text: "Đấu trường ",
+                    style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
+                  ),
+                  TextSpan(
+                    text: "Tri thức & Sáng tạo",
+                    style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w900,
+                      foreground: Paint()
+                        ..shader = const LinearGradient(
+                          colors: [
+                            Color(0xFFB2EBF2),
+                            Color(0xFFBBDEFB),
+                            Color(0xFFB2EBF2),
+                          ],
+                        ).createShader(Rect.fromLTWH(0, 0, 300, 70)),
+                    ),
+                  ),
+                ],
+              ),
+              textAlign: TextAlign.center,
+            ),
+
+            const SizedBox(height: 12),
+
+            const Text(
+              "Nơi sinh viên CNTT thể hiện tài năng, khám phá đam mê và kiến tạo tương lai.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 14,
+                height: 1.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Stats
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildStat("12+", "Cuộc thi"),
+                const SizedBox(width: 32),
+                _buildStat("2.5K+", "Sinh viên"),
+                const SizedBox(width: 32),
+                _buildStat("80+", "Giải thưởng"),
+              ],
             ),
           ],
         ),

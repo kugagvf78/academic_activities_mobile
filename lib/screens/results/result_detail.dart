@@ -45,7 +45,6 @@ class KetQuaDetailScreen extends StatelessWidget {
   Widget _buildHeroSection() {
     return CustomHeroSliverAppBar(
       title: cuocThi.tenCuocThi ?? "Kết quả cuộc thi",
-      height: 260,
       description:
           "Ngày kết thúc: ${_fmtDate(cuocThi.thoiGianKetThuc)} • Tổng giải: ${giaiThuong.length}",
       imagePath: "assets/images/patterns/pattern3.jpg",

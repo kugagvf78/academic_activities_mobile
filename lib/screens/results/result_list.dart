@@ -276,7 +276,7 @@ class _KetQuaScreenState extends State<KetQuaScreen>
                         MaterialPageRoute(
                           builder: (_) => KetQuaDetailScreen(
                             cuocThi: cuocThi,
-                            giaiThuong: giai, 
+                            giaiThuong: giai,
                             vongThi: vong,
                           ),
                         ),
@@ -293,7 +293,176 @@ class _KetQuaScreenState extends State<KetQuaScreen>
   }
 
   // ================== HERO ==================
-  Widget _buildHeroSection() { return SliverAppBar( expandedHeight: 250, floating: false, pinned: true, elevation: 0, flexibleSpace: FlexibleSpaceBar( background: Stack( fit: StackFit.expand, children: [ Opacity( opacity: 0.7, child: Image.asset( 'assets/images/patterns/pattern1.jpg', fit: BoxFit.cover, ), ), Container( decoration: const BoxDecoration( gradient: LinearGradient( begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [ Color.fromARGB(240, 0, 132, 255), Color.fromARGB(179, 27, 125, 204), ], ), ), ), Container(color: Colors.black.withOpacity(0.15)), SafeArea( child: Padding( padding: const EdgeInsets.all(20), child: Column( mainAxisAlignment: MainAxisAlignment.end, children: [ Container( padding: const EdgeInsets.symmetric( horizontal: 14, vertical: 8, ), decoration: BoxDecoration( color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(30), border: Border.all( color: Colors.white.withOpacity(0.25), ), ), child: const Row( mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [ FaIcon( FontAwesomeIcons.medal, size: 14, color: Color(0xFFFFF176), ), SizedBox(width: 8), Text( "Kết quả Cuộc thi Học thuật", style: TextStyle( color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600, ), ), ], ), ), const SizedBox(height: 16), Text.rich( TextSpan( children: [ const TextSpan( text: "Vinh danh ", style: TextStyle( fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white, ), ), TextSpan( text: "Tài năng & Thành tích", style: TextStyle( fontSize: 30, fontWeight: FontWeight.bold, foreground: Paint() ..shader = const LinearGradient( colors: [ Color(0xFFFFF59D), Color(0xFFFFFFFF), Color(0xFFFFF176), ], ).createShader(Rect.fromLTWH(0, 0, 300, 70)), ), ), ], ), textAlign: TextAlign.center, ), const SizedBox(height: 12), const Text( "Tổng hợp kết quả, giải thưởng và gương mặt xuất sắc nhất trong các cuộc thi học thuật CNTT.", textAlign: TextAlign.center, style: TextStyle( color: Colors.white70, fontSize: 14, height: 1.5, fontWeight: FontWeight.w600, ), ), ], ), ), ), ], ), ), ); }
+  Widget _buildHeroSection() {
+    return SliverAppBar(
+      expandedHeight: 260,
+      pinned: true,
+      elevation: 0,
+      backgroundColor: Colors.transparent, // ⭐ Ban đầu trong suốt
+      automaticallyImplyLeading: false,
+
+      flexibleSpace: LayoutBuilder(
+        builder: (context, constraints) {
+          bool collapsed = constraints.biggest.height <= kToolbarHeight + 20;
+
+          return FlexibleSpaceBar(
+            centerTitle: true,
+
+            // ⭐ Chỉ hiện khi collapse
+            title: collapsed
+                ? const Text(
+                    "Kết quả Cuộc thi",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  )
+                : null,
+
+            background: Stack(
+              fit: StackFit.expand,
+              children: [
+                // 🖼 Image nền
+                Opacity(
+                  opacity: 0.7,
+                  child: Image.asset(
+                    'assets/images/patterns/award_pattern.jpg',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+
+                // 🎨 Gradient phủ khi expanded
+                Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color.fromARGB(240, 0, 132, 255),
+                        Color.fromARGB(179, 27, 125, 204),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // 🌫️ Overlay nhẹ
+                Container(color: Colors.black.withOpacity(0.2)),
+
+                // ⭐ Hero content ẩn dần khi collapse
+                AnimatedOpacity(
+                  duration: const Duration(milliseconds: 200),
+                  opacity: collapsed ? 0 : 1,
+                  child: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          // Badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(30),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.25),
+                              ),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                FaIcon(
+                                  FontAwesomeIcons.medal,
+                                  size: 14,
+                                  color: Color(0xFFFFF176),
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  "Kết quả Cuộc thi Học thuật",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Big title
+                          Text.rich(
+                            TextSpan(
+                              children: [
+                                const TextSpan(
+                                  text: "Vinh danh ",
+                                  style: TextStyle(
+                                    fontSize: 31,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: "Tài năng & Thành tích",
+                                  style: TextStyle(
+                                    fontSize: 31,
+                                    fontWeight: FontWeight.bold,
+                                    foreground: Paint()
+                                      ..shader =
+                                          const LinearGradient(
+                                            colors: [
+                                              Color(0xFFFFF59D),
+                                              Color(0xFFFFFFFF),
+                                              Color(0xFFFFF176),
+                                            ],
+                                          ).createShader(
+                                            Rect.fromLTWH(0, 0, 300, 70),
+                                          ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // Subtext
+                          const Text(
+                            "Tổng hợp kết quả, giải thưởng và gương mặt xuất sắc nhất trong các cuộc thi học thuật CNTT.",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                              height: 1.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                // ⭐ Thanh AppBar color khi collapsed
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  color: collapsed
+                      ? Colors.blue[700]!.withOpacity(1) // hiện hoàn toàn
+                      : Colors.transparent, // ban đầu trong suốt
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
 
   // ============= FILTER =============
   Widget _buildFilterBar() {
