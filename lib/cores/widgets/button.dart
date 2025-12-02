@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// 🔹 Button chính — Nút nền màu (Elevated)
-
 class PrimaryButton extends StatelessWidget {
   final String label;
   final IconData icon;
@@ -42,8 +40,8 @@ class PrimaryButton extends StatelessWidget {
             vertical: isSmall ? 10 : 14,
           ),
           child: Row(
-            mainAxisSize: MainAxisSize.max,         // full width
-            mainAxisAlignment: MainAxisAlignment.center, // 🔥 icon + text vào giữa
+            mainAxisSize: MainAxisSize.max,       
+            mainAxisAlignment: MainAxisAlignment.center, 
             children: [
               Icon(icon, color: Colors.white, size: isSmall ? 14 : 18),
               const SizedBox(width: 8),
@@ -63,14 +61,14 @@ class PrimaryButton extends StatelessWidget {
   }
 }
 
-/// 🔹 Button viền — Nút outline (Outlined)
 class OutlineButtonCustom extends StatelessWidget {
   final String label;
   final IconData icon;
   final VoidCallback onPressed;
   final Color? color;
   final double? borderRadius;
-  final bool bgColor; // 
+  final bool bgColor;
+  final bool isSmall; 
 
   const OutlineButtonCustom({
     super.key,
@@ -79,7 +77,8 @@ class OutlineButtonCustom extends StatelessWidget {
     required this.onPressed,
     this.color,
     this.borderRadius,
-    this.bgColor = false, 
+    this.bgColor = false,
+    this.isSmall = false, 
   });
 
   @override
@@ -88,21 +87,27 @@ class OutlineButtonCustom extends StatelessWidget {
 
     return OutlinedButton.icon(
       onPressed: onPressed,
-      icon: Icon(icon, size: 16, color: baseColor),
+      icon: Icon(
+        icon,
+        size: isSmall ? 13 : 16,    
+        color: baseColor,
+      ),
       label: Text(
         label,
         style: TextStyle(
-          fontSize: 15,
+          fontSize: isSmall ? 12.5 : 15,  
           fontWeight: FontWeight.w600,
           color: baseColor,
         ),
       ),
       style: OutlinedButton.styleFrom(
         side: BorderSide(color: baseColor, width: 1.3),
-        backgroundColor: bgColor
-            ? baseColor.withValues(alpha: 0.15) // 
-            : Colors.white, //
-        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+        backgroundColor:
+            bgColor ? baseColor.withOpacity(0.12) : Colors.transparent,
+        padding: EdgeInsets.symmetric(
+          horizontal: isSmall ? 14 : 22, 
+          vertical: isSmall ? 10 : 14,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(borderRadius ?? 30),
         ),
@@ -111,6 +116,7 @@ class OutlineButtonCustom extends StatelessWidget {
     );
   }
 }
+
 
 class DetailButton extends StatelessWidget {
   final String label;

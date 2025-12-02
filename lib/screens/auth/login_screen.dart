@@ -244,32 +244,33 @@ class _LoginScreenState extends State<LoginScreen> {
             );
           }
         } catch (e) {
-          if (e is DioException) {
-            dynamic raw = e.response?.data;
+  if (e is DioException) {
+    dynamic raw = e.response?.data;
 
-            String message = "Có lỗi xảy ra, vui lòng thử lại!";
+    String message = "Có lỗi xảy ra, vui lòng thử lại!";
 
-            // Trường hợp Laravel trả JSON Map
-            if (raw is Map && raw.containsKey("message")) {
-              message = raw["message"];
-            }
-            // Trường hợp Laravel trả JSON nhưng dưới dạng String
-            else if (raw is String) {
-              try {
-                final parsed = jsonDecode(raw);
-                if (parsed is Map && parsed.containsKey("message")) {
-                  message = parsed["message"];
-                }
-              } catch (_) {
-                // ignore error
-              }
-            }
-
-            ErrorToast.show(context, message);
-          } else {
-            ErrorToast.show(context, 'Có lỗi xảy ra');
-          }
+    if (raw is Map) {
+      if (raw.containsKey("message")) {
+        message = raw["message"];
+      } else if (raw.containsKey("error")) {
+        message = raw["error"];  // 👈 Thêm dòng này
+      }
+    }
+    else if (raw is String) {
+      try {
+        final parsed = jsonDecode(raw);
+        if (parsed is Map && parsed.containsKey("error")) {
+          message = parsed["error"]; // 👈 và ở đây
         }
+      } catch (_) {}
+    }
+
+    ErrorToast.show(context, message);
+  } else {
+    ErrorToast.show(context, 'Có lỗi xảy ra');
+  }
+}
+
       },
       child: Container(
         width: double.infinity,

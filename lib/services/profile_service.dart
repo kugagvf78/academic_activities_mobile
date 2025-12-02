@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:academic_activities_mobile/models/DangKyHoatDongFull.dart';
+import 'package:academic_activities_mobile/models/DatGiaiApi.dart';
 import 'package:academic_activities_mobile/models/HoatDongNgan.dart';
 import 'package:dio/dio.dart';
 
@@ -54,9 +55,9 @@ class ProfileService {
 
           "activities": data["activities"] ?? [],
 
-          "certificates": (data["certificates"] ?? [])
-              .map((e) => DatGiai.fromJson(e))
-              .toList(),
+          "certificates": List<DatGiaiApi>.from(
+            (data["certificates"] ?? []).map((e) => DatGiaiApi.fromJson(e)),
+          ),
 
           "registrations": _parseRegistrations(data["registrations"] ?? []),
 

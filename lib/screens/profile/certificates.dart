@@ -1,10 +1,12 @@
 import 'package:academic_activities_mobile/cores/widgets/appbar.dart';
+import 'package:academic_activities_mobile/models/DatGiaiApi.dart';
 import 'package:academic_activities_mobile/screens/navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class CertificatesScreen extends StatelessWidget {
-  final List certificates;
+  final List<DatGiaiApi> certificates;
+
 
   const CertificatesScreen({super.key, required this.certificates});
 
@@ -145,125 +147,118 @@ class CertificatesScreen extends StatelessWidget {
   }
 
   // ========================= CERTIFICATE CARD =========================
-  Widget _buildCertificateCard(dynamic cert) {
-    final award = cert['award'] ?? "Chứng nhận";
-    final prize = cert['prize'] ?? "—";
-    final event = cert['event'] ?? "—";
-    final date = cert['date'] ?? "—";
-    final points = double.tryParse(cert['points']?.toString() ?? "0") ?? 0.0;
-    final type = cert['type'] == "DoiNhom" ? "Đội nhóm" : "Cá nhân";
+  Widget _buildCertificateCard(DatGiaiApi cert) {
+  final award = cert.award;
+  final prize = cert.prize;
+  final event = cert.event;
+  final date = cert.date;
+  final points = cert.points;
+  final type = cert.type == "DoiNhom" ? "Đội nhóm" : "Cá nhân";
 
-    final awardLevel = _getAwardLevel(award);
-    final awardColor = _getAwardColor(awardLevel);
-    final awardIcon = _getAwardIcon(awardLevel);
+  final awardLevel = _getAwardLevel(award);
+  final awardColor = _getAwardColor(awardLevel);
+  final awardIcon = _getAwardIcon(awardLevel);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // HEADER ROW
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // LEFT ICON + TEXT
-              Row(
-                children: [
-                  Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: awardColor.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: awardColor.withOpacity(0.3)),
-                    ),
-                    child: Center(
-                      child: FaIcon(
-                        awardIcon,
-                        color: awardColor,
-                        size: 22,
-                      ),
-                    ),
-                  ),
+  return Container(
+    margin: const EdgeInsets.only(bottom: 16),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: Colors.grey.shade200),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.03),
+          blurRadius: 6,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
 
-                  const SizedBox(width: 14),
-
-                  // Award name + type
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        award,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: awardColor,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        type,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: awardColor.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: awardColor.withOpacity(0.3)),
               ),
-
-              const Spacer(),
-
-              // POINT BADGE
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(15),
+              child: Center(
+                child: FaIcon(
+                  awardIcon,
+                  color: awardColor,
+                  size: 22,
                 ),
-                child: Text(
-                  "${points.toStringAsFixed(1)} điểm",
+              ),
+            ),
+
+            const SizedBox(width: 14),
+
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  award,
                   style: TextStyle(
-                    color: Colors.green.shade700,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: awardColor,
                   ),
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  type,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+
+            const Spacer(),
+
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(15),
               ),
-            ],
-          ),
-          const SizedBox(height: 5),
-          Divider(thickness: 1, color: Colors.grey.shade200),
+              child: Text(
+                "${points.toStringAsFixed(1)} điểm",
+                style: TextStyle(
+                  color: Colors.green.shade700,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
 
-          const SizedBox(height: 5),
+        const SizedBox(height: 5),
+        Divider(thickness: 1, color: Colors.grey.shade200),
 
-          _miniInfo("assets/icons/event2.png", event),
-          const SizedBox(height: 7),
+        const SizedBox(height: 5),
 
-          _miniInfo("assets/icons/gift.png", prize),
-          const SizedBox(height: 7),
+        _miniInfo("assets/icons/event2.png", event),
+        const SizedBox(height: 7),
 
-          _miniInfo("assets/icons/calendar.png", _formatDate(date)),
-        ],
-      ),
-    );
-  }
+        _miniInfo("assets/icons/gift.png", prize),
+        const SizedBox(height: 7),
+
+        _miniInfo("assets/icons/calendar.png", _formatDate(date)),
+      ],
+    ),
+  );
+}
 
   // ========================= Info Row =========================
   Widget _miniInfo(String iconUrl, String text) {

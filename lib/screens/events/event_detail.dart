@@ -170,9 +170,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   // =====================================================================================
 
   Widget _buildActionButtons(BuildContext context) {
+    final String id = event!["macuocthi"];
+
     if (event!["status_label"] == "Sắp diễn ra") {
       return Column(
         children: [
+          // ---------------------
+          // 🔵 ĐĂNG KÝ DỰ THI
+          // ---------------------
           SizedBox(
             width: double.infinity,
             child: PrimaryButton(
@@ -184,6 +189,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (_) => EventRegisterScreen(
+                      id: event!["macuocthi"], // 👈 quan trọng
                       tenCuocThi: event!["tencuocthi"],
                       hinhThuc: event!["hinhthucthamgia"] ?? "CaNhan",
                     ),
@@ -192,6 +198,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               },
             ),
           ),
+
           const SizedBox(height: 10),
 
           Row(

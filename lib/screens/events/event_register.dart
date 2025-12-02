@@ -2,16 +2,17 @@ import 'package:academic_activities_mobile/cores/widgets/button.dart';
 import 'package:academic_activities_mobile/cores/widgets/custom_sliver_appbar.dart';
 import 'package:academic_activities_mobile/cores/widgets/info_tag.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:academic_activities_mobile/cores/widgets/input.dart';
 
 class EventRegisterScreen extends StatefulWidget {
+  final String id;          // 🔥 MÃ CUỘC THI
   final String tenCuocThi;
-  final String hinhThuc; // CaNhan / DoiNhom / CaHai
+  final String hinhThuc;    // CaNhan / DoiNhom / CaHai
 
   const EventRegisterScreen({
     super.key,
+    required this.id,
     required this.tenCuocThi,
     required this.hinhThuc,
   });
@@ -21,18 +22,25 @@ class EventRegisterScreen extends StatefulWidget {
 }
 
 class _EventRegisterScreenState extends State<EventRegisterScreen> {
-  String type = "individual";
+  String type = "individual"; // individual / team
   String teamName = "";
+
+  // Controllers cho leader/student
+  final _nameCtrl = TextEditingController();
+  final _mssvCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _noteCtrl = TextEditingController();
+
+  // Thành viên nhóm
   List<Map<String, String>> members = [];
 
   @override
   void initState() {
     super.initState();
-    // auto chọn khi chỉ có 1 hình thức
+
     if (widget.hinhThuc == "CaNhan") type = "individual";
-    if (widget.hinhThuc == "DoiNhom") {
-      type = "team";
-    }
+    if (widget.hinhThuc == "DoiNhom") type = "team";
   }
 
   void addMember() {
@@ -47,10 +55,48 @@ class _EventRegisterScreenState extends State<EventRegisterScreen> {
     });
   }
 
-  // -------------------------------
-  // UI START
-  // -------------------------------
+  // -----------------------------------------
+  // SUBMIT
+  // -----------------------------------------
+  void _submit() async {
+    if (_nameCtrl.text.isEmpty ||
+        _mssvCtrl.text.isEmpty ||
+        _emailCtrl.text.isEmpty ||
+        _phoneCtrl.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Vui lòng nhập đầy đủ thông tin bắt buộc")),
+      );
+      return;
+    }
 
+    Map<String, dynamic> body = {
+      "macuocthi": widget.id,
+      "type": type,
+      "team_name": teamName,
+      "leader": {
+        "name": _nameCtrl.text,
+        "mssv": _mssvCtrl.text,
+        "email": _emailCtrl.text,
+        "phone": _phoneCtrl.text,
+      },
+      "members": members,
+      "note": _noteCtrl.text,
+    };
+
+    print("📤 JSON GỬI API:");
+    print(body);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Gửi đăng ký thành công")),
+    );
+
+    // TODO:
+    // await EventService().registerCompetition(body);
+  }
+
+  // -----------------------------------------
+  // UI START
+  // -----------------------------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -68,19 +114,13 @@ class _EventRegisterScreenState extends State<EventRegisterScreen> {
     return CustomHeroSliverAppBar(
       title: "Đăng Ký Tham Gia",
       description: "Khẳng định bản lĩnh và chinh phục tri thức",
-
-      // Ảnh nền hero
       imagePath: "assets/images/patterns/pattern4.jpg",
-
-      // Trạng thái (option)
       statusText: widget.hinhThuc == "CaNhan"
           ? "Cá nhân"
           : widget.hinhThuc == "DoiNhom"
-          ? "Đội nhóm"
-          : "Cả hai",
+              ? "Đội nhóm"
+              : "Cả hai",
       statusColor: Colors.white,
-
-      // Meta info
       metaItems: [
         Row(
           mainAxisSize: MainAxisSize.min,
@@ -93,25 +133,20 @@ class _EventRegisterScreenState extends State<EventRegisterScreen> {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              FontAwesomeIcons.circleInfo,
-              size: 14,
-              color: Colors.white70,
-            ),
+            const Icon(FontAwesomeIcons.circleInfo,
+                size: 14, color: Colors.white70),
             const SizedBox(width: 6),
-            Text(
-              widget.tenCuocThi,
-              style: const TextStyle(color: Colors.white70),
-            ),
+            Text(widget.tenCuocThi,
+                style: const TextStyle(color: Colors.white70)),
           ],
         ),
       ],
     );
   }
 
-  // -------------------------------
+  // -----------------------------------------
   // FORM
-  // -------------------------------
+  // -----------------------------------------
   Widget _buildForm() {
     return Padding(
       padding: const EdgeInsets.all(18),
@@ -124,11 +159,10 @@ class _EventRegisterScreenState extends State<EventRegisterScreen> {
             BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10),
           ],
         ),
-
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // TITLE
+            // Title
             Center(
               child: Column(
                 children: [
@@ -141,21 +175,17 @@ class _EventRegisterScreenState extends State<EventRegisterScreen> {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    "Vui lòng điền đủ thông tin",
-                    style: TextStyle(color: Colors.grey.shade600),
-                  ),
+                  Text("Vui lòng điền đủ thông tin",
+                      style: TextStyle(color: Colors.grey.shade600)),
                 ],
               ),
             ),
-
             const SizedBox(height: 20),
 
             // Tên Cuộc Thi
             _buildLabel("Tên cuộc thi"),
             const SizedBox(height: 10),
             InfoTag(color: Colors.grey, text: widget.tenCuocThi),
-
             const SizedBox(height: 18),
 
             // Hình thức
@@ -180,15 +210,17 @@ class _EventRegisterScreenState extends State<EventRegisterScreen> {
 
             const SizedBox(height: 20),
 
-            LabeledInput(
-              label: "Tên đội thi *",
-              hint: "Nhập tên đội...",
-              onChanged: (v) => setState(() => teamName = v),
-            ),
+            // Team Name
+            if (type == "team")
+              LabeledInput(
+                label: "Tên đội thi *",
+                hint: "Nhập tên đội...",
+                onChanged: (v) => teamName = v,
+              ),
 
             const SizedBox(height: 24),
 
-            // Info leader/student
+            // Leader/Student Info
             Text(
               type == "individual"
                   ? "Thông tin thí sinh"
@@ -200,32 +232,47 @@ class _EventRegisterScreenState extends State<EventRegisterScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            LabeledInput(label: "Họ và tên *", hint: "Nhập họ và tên"),
+
+            LabeledInput(
+              label: "Họ và tên *",
+              hint: "Nhập họ và tên",
+              controller: _nameCtrl,
+            ),
             const SizedBox(height: 16),
-            LabeledInput(label: "Mã số sinh viên *", hint: "2024001234"),
+
+            LabeledInput(
+              label: "Mã số sinh viên *",
+              hint: "2024001234",
+              controller: _mssvCtrl,
+            ),
             const SizedBox(height: 16),
+
             LabeledInput(
               label: "Email sinh viên *",
               hint: "student@example.com",
+              controller: _emailCtrl,
             ),
             const SizedBox(height: 16),
-            LabeledInput(label: "Số điện thoại *", hint: "0912345678"),
 
+            LabeledInput(
+              label: "Số điện thoại *",
+              hint: "0912345678",
+              controller: _phoneCtrl,
+            ),
             const SizedBox(height: 30),
 
-            // Thành viên nhóm
+            //
             if (type == "team") _buildTeamMembers(),
 
             const SizedBox(height: 20),
 
-            // Ghi chú
             _buildLabel("Ghi chú"),
-            SizedBox(height: 6),
-            _inputMultiline(),
+            const SizedBox(height: 6),
+            _inputMultiline(controller: _noteCtrl),
 
             const SizedBox(height: 30),
 
-            // SUBMIT BUTTON
+            //
             Center(
               child: Container(
                 width: double.infinity,
@@ -238,7 +285,7 @@ class _EventRegisterScreenState extends State<EventRegisterScreen> {
                 child: PrimaryButton(
                   label: "Gửi Đăng Ký",
                   icon: Icons.send_rounded,
-                  onPressed: () {},
+                  onPressed: _submit,
                   borderRadius: 12,
                 ),
               ),
@@ -249,27 +296,22 @@ class _EventRegisterScreenState extends State<EventRegisterScreen> {
     );
   }
 
-  // -------------------------------
+  // -----------------------------------------
   // TEAM MEMBERS LIST
-  // -------------------------------
+  // -----------------------------------------
   Widget _buildTeamMembers() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              "Thành viên nhóm (Ngoài trưởng nhóm)",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF111827),
-              ),
-            ),
-          ],
+        const Text(
+          "Thành viên nhóm (Ngoài trưởng nhóm)",
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF111827),
+          ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 14),
 
         if (members.isEmpty)
           Container(
@@ -280,10 +322,8 @@ class _EventRegisterScreenState extends State<EventRegisterScreen> {
               border: Border.all(color: Colors.grey.shade200),
             ),
             child: Center(
-              child: Text(
-                "Chưa có thành viên",
-                style: TextStyle(color: Colors.grey.shade500),
-              ),
+              child: Text("Chưa có thành viên",
+                  style: TextStyle(color: Colors.grey.shade500)),
             ),
           )
         else
@@ -300,38 +340,32 @@ class _EventRegisterScreenState extends State<EventRegisterScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      "Thành viên ${i + 1}",
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey.shade700,
-                      ),
+                    Text("Thành viên ${i + 1}",
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade700,
+                        )),
+                    const SizedBox(height: 12),
+
+                    LabeledInput(
+                      label: "Họ và tên",
+                      hint: "Nhập họ tên",
+                      onChanged: (v) => members[i]["name"] = v,
                     ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: LabeledInput(
-                            label: "Họ và tên *",
-                            hint: "0912345678",
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: LabeledInput(
-                            label: "Mã sinh viên *",
-                            hint: "0912345678",
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: LabeledInput(
-                            label: "Email *",
-                            hint: "0912345678",
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: 14),
+
+                    LabeledInput(
+                      label: "Mã sinh viên",
+                      hint: "Nhập MSSV",
+                      onChanged: (v) => members[i]["mssv"] = v,
+                    ),
+                    const SizedBox(height: 14),
+
+                    LabeledInput(
+                      label: "Email",
+                      hint: "Nhập Email",
+                      onChanged: (v) => members[i]["email"] = v,
                     ),
                   ],
                 ),
@@ -344,28 +378,30 @@ class _EventRegisterScreenState extends State<EventRegisterScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            TextButton.icon(
-              icon: const Icon(FontAwesomeIcons.userPlus, size: 14),
-              label: const Text("Thêm thành viên"),
+            OutlineButtonCustom(
+              label: "Thêm thành viên",
+              icon: FontAwesomeIcons.userPlus,
               onPressed: addMember,
-              style: TextButton.styleFrom(foregroundColor: Colors.blue),
+              isSmall: true,
+              bgColor: true,
             ),
-            if (members.isNotEmpty)
-              TextButton.icon(
-                icon: const Icon(FontAwesomeIcons.userMinus, size: 14),
-                label: const Text("Xóa thành viên"),
-                onPressed: removeMember,
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-              ),
+            OutlineButtonCustom(
+              label: "Xóa thành viên",
+              icon: FontAwesomeIcons.userMinus,
+              onPressed: removeMember,
+              isSmall: true,
+              bgColor: true,
+              color: Colors.red,
+            ),
           ],
         ),
       ],
     );
   }
 
-  // -------------------------------
-  // SMALL UI HELPERS
-  // -------------------------------
+  // -----------------------------------------
+  // UI HELPERS
+  // -----------------------------------------
   Widget _radio(String value, String label) {
     return Row(
       children: [
@@ -392,35 +428,25 @@ class _EventRegisterScreenState extends State<EventRegisterScreen> {
   }
 }
 
-Widget _inputMultiline() {
+// MULTILINE
+Widget _inputMultiline({required TextEditingController controller}) {
   return TextField(
+    controller: controller,
     maxLines: 3,
     decoration: InputDecoration(
       hintText: "Nhập ghi chú ...",
       hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
-
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
       ),
-
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.4),
       ),
-
       isDense: true,
     ),
   );
 }
-
-// ======================================
-// WAVES - SVG giống bản web
-// ======================================
-const String _waveSvg = '''
-<svg viewBox="0 0 1440 120" xmlns="http://www.w3.org/2000/svg">
-<path fill="#ffffff" d="M0,64L80,74.7C160,85,320,107,480,117.3C640,128,800,128,960,117.3C1120,107,1280,85,1360,74.7L1440,64V120H0Z"/>
-</svg>
-''';

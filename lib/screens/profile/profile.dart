@@ -1,5 +1,6 @@
 import 'package:academic_activities_mobile/models/DangKyHoatDong.dart';
 import 'package:academic_activities_mobile/models/DangKyHoatDongFull.dart';
+import 'package:academic_activities_mobile/models/DatGiaiApi.dart';
 import 'package:academic_activities_mobile/models/DiemRenLuyen.dart';
 import 'package:academic_activities_mobile/models/Lop.dart';
 import 'package:academic_activities_mobile/models/SinhVien.dart';
@@ -479,9 +480,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // 5. Chứng nhận / đạt giải
       // ==============================
       case 5:
-        final certs = (_fullData?['certificates'] ?? []) as List;
-        screen = CertificatesScreen(certificates: certs);
-        break;
+  final raw = _fullData?['certificates'] ?? [];
+
+  final List<DatGiaiApi> certs = raw.map<DatGiaiApi>((e) {
+    if (e is DatGiaiApi) return e;
+    return DatGiaiApi.fromJson(e);
+  }).toList();
+
+  screen = CertificatesScreen(certificates: certs);
+  break;
 
       // ==============================
       // 6. Cài đặt

@@ -1,4 +1,7 @@
+import 'package:academic_activities_mobile/models/CuocThi.dart';
+import 'package:academic_activities_mobile/screens/events/event_detail.dart';
 import 'package:academic_activities_mobile/screens/navigation.dart';
+import 'package:academic_activities_mobile/services/event_service.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -16,6 +19,9 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentBanner = 0;
   final CarouselSliderController _carouselController =
       CarouselSliderController();
+  final EventService _eventService = EventService();
+  List<CuocThi> upcomingEvents = [];
+  bool _loadingEvents = true;
 
   final List<String> banners = [
     'assets/images/home/banner1.jpg',
@@ -23,18 +29,41 @@ class _HomeScreenState extends State<HomeScreen> {
     'assets/images/home/banner3.jpg',
   ];
 
-  final List<Map<String, String>> featuredEvents = [
-    {
-      'title': 'AI Innovation Contest 2025',
-      'desc': 'Khám phá tiềm năng trí tuệ nhân tạo',
-      'image': 'assets/images/home/banner1.jpg',
-    },
-    {
-      'title': 'Hội thi Thiết kế Web 2025',
-      'desc': 'Thể hiện sáng tạo trong lập trình giao diện',
-      'image': 'assets/images/home/banner1.jpg',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadUpcomingEvents();
+  }
+
+  Future<void> _loadUpcomingEvents() async {
+    try {
+      final events = await _eventService.getEvents();
+
+      // Lọc sự kiện sắp diễn ra (chưa bắt đầu)
+      final now = DateTime.now();
+
+      final filtered = events.where((e) {
+        if (e.thoiGianBatDau == null) return false;
+        final start = DateTime.tryParse(e.thoiGianBatDau!);
+        if (start == null) return false;
+        return start.isAfter(now);
+      }).toList();
+
+      // Lấy 2 cái sớm nhất
+      filtered.sort(
+        (a, b) => DateTime.parse(
+          a.thoiGianBatDau!,
+        ).compareTo(DateTime.parse(b.thoiGianBatDau!)),
+      );
+
+      setState(() {
+        upcomingEvents = filtered.take(2).toList();
+        _loadingEvents = false;
+      });
+    } catch (e) {
+      _loadingEvents = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -149,7 +178,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 40),
                 _buildFeaturedTitle(),
                 const SizedBox(height: 16),
-                ...featuredEvents.map(_buildFeaturedEventCard),
+                _loadingEvents
+                    ? const Center(child: CircularProgressIndicator())
+                    : Column(
+                        children: upcomingEvents
+                            .map((e) => _buildUpcomingEventCard(e))
+                            .toList(),
+                      ),
                 _buildAboutSection(),
                 _buildBigStatsSection(),
                 _buildContactSection(),
@@ -248,7 +283,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return Center(child: const SectionTag(label: "Sự kiện nổi bật"));
   }
 
-  Widget _buildFeaturedEventCard(Map<String, String> event) {
+  Widget _buildUpcomingEventCard(CuocThi e) {
+    final img = "assets/images/patterns/event_pattern2.jpg"; 
+
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       height: 200,
@@ -266,49 +303,76 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(20),
         child: Stack(
           children: [
+            // Ảnh đại diện cuộc thi
             Image.asset(
-              event['image']!,
-              fit: BoxFit.cover,
+              img,
               width: double.infinity,
+              height: double.infinity,
+              fit: BoxFit.cover,
             ),
+
+            // Mờ nền
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
+                  colors: [Colors.transparent, Colors.black.withOpacity(0.9)],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black.withOpacity(0.95)],
                 ),
               ),
             ),
+
+            // Nội dung
             Positioned(
-              bottom: 15,
-              left: 15,
-              right: 15,
+              bottom: 16,
+              left: 16,
+              right: 16,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    event['title']!,
+                    e.tenCuocThi ?? "Cuộc thi",
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
-                  Text(
-                    event['desc']!,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.white70,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.calendar_today,
+                        color: Colors.white70,
+                        size: 13,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _formatDate(e.thoiGianBatDau),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 10),
                   PrimaryButton(
                     label: "Xem chi tiết",
                     icon: FontAwesomeIcons.arrowRight,
-                    isSmall: true, // 👈 làm nút gọn trong card
-                    onPressed: () {},
+                    isSmall: true,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              EventDetailScreen(id: e.maCuocThi!),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -711,5 +775,15 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Icon(icon, color: color, size: 22),
     );
+  }
+
+  String _formatDate(String? raw) {
+    if (raw == null) return "--/--/----";
+    try {
+      final dt = DateTime.parse(raw);
+      return "${dt.day}/${dt.month}/${dt.year}";
+    } catch (_) {
+      return raw;
+    }
   }
 }

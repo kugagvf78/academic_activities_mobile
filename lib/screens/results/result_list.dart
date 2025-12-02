@@ -81,7 +81,7 @@ class _KetQuaScreenState extends State<KetQuaScreen>
           ),
 
           // Chỉ lấy winner hiển thị tạm
-          "winner": json["winner"] ?? "Chưa công bố"
+          "winner": json["winner"] ?? "Chưa công bố",
         };
       }).toList();
 
@@ -131,7 +131,6 @@ class _KetQuaScreenState extends State<KetQuaScreen>
   // ================= CARD =================
   Widget _buildResultCard(Map<String, dynamic> item) {
     final CuocThi cuocThi = item["cuocthi"];
-
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -146,7 +145,7 @@ class _KetQuaScreenState extends State<KetQuaScreen>
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
             child: Image.asset(
-              "assets/images/home/banner1.jpg",
+              "assets/images/patterns/award_pattern2.jpg",
               height: 150,
               width: double.infinity,
               fit: BoxFit.cover,
@@ -176,13 +175,15 @@ class _KetQuaScreenState extends State<KetQuaScreen>
 
                 Row(
                   children: [
-                    const Icon(Icons.calendar_today,
-                        size: 14, color: Colors.blue),
+                    const Icon(
+                      Icons.calendar_today,
+                      size: 14,
+                      color: Colors.blue,
+                    ),
                     const SizedBox(width: 6),
                     Text(item["date"], style: const TextStyle(fontSize: 13)),
                     const Spacer(),
-                    const Icon(Icons.people,
-                        size: 14, color: Colors.purple),
+                    const Icon(Icons.people, size: 14, color: Colors.purple),
                     const SizedBox(width: 6),
                     Text("${item["soluongthamgia"]} thí sinh"),
                   ],
@@ -199,9 +200,8 @@ class _KetQuaScreenState extends State<KetQuaScreen>
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => KetQuaDetailScreen(
-                            maCuocThi: cuocThi.maCuocThi!,
-                          ),
+                          builder: (_) =>
+                              KetQuaDetailScreen(maCuocThi: cuocThi.maCuocThi!),
                         ),
                       );
                     },
@@ -216,7 +216,7 @@ class _KetQuaScreenState extends State<KetQuaScreen>
   }
 
   // ================== HERO ==================
- Widget _buildHeroSection() {
+  Widget _buildHeroSection() {
     return SliverAppBar(
       expandedHeight: 260,
       pinned: true,

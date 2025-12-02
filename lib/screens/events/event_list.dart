@@ -443,7 +443,7 @@ class _CuocThiScreenState extends State<CuocThiScreen>
                   top: Radius.circular(20),
                 ),
                 child: Image.asset(
-                  'assets/images/home/banner1.jpg',
+                  'assets/images/patterns/event_pattern2.jpg',
                   height: 140,
                   width: double.infinity,
                   fit: BoxFit.cover,
