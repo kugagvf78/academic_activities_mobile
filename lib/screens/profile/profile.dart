@@ -320,7 +320,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withOpacity(0.5)),
         boxShadow: [BoxShadow(color: color.withOpacity(0.12), blurRadius: 12)],
       ),
       child: Column(
@@ -439,16 +439,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // 1. Hoạt động học thuật (dashboard)
       // ==============================
       case 1:
-        final raw = _fullData?['activities'] ?? [];
-
-        final activities = raw.map((e) {
-          if (e is DangKyHoatDong) return e;
-          return DangKyHoatDong.fromJson(e);
-        }).toList();
-
-        screen = AcademicActivitiesScreen(activities: activities);
+        screen = const AcademicActivitiesScreen();
         break;
-
       // ==============================
       // 2. Điểm rèn luyện
       // ==============================
@@ -470,24 +462,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // 4. Đăng ký hỗ trợ - cổ vũ
       // ==============================
       case 4:
-  final raw = _fullData?['registrations'] ?? [];
+        final raw = _fullData?['registrations'] ?? [];
 
-  final activities = <DangKyHoatDongFull>[];
-  for (var item in raw) {
-    if (item is DangKyHoatDongFull) {
-      activities.add(item);
-    } else {
-      activities.add(DangKyHoatDongFull.fromJson(item));
-    }
-  }
+        final activities = <DangKyHoatDongFull>[];
+        for (var item in raw) {
+          if (item is DangKyHoatDongFull) {
+            activities.add(item);
+          } else {
+            activities.add(DangKyHoatDongFull.fromJson(item));
+          }
+        }
 
-  screen = SupportRegistrationScreen(activities: activities);
-  break;
+        screen = SupportRegistrationScreen(activities: activities);
+        break;
       // ==============================
       // 5. Chứng nhận / đạt giải
       // ==============================
       case 5:
-        final certs = _fullData?['certificates'] ?? [];
+        final certs = (_fullData?['certificates'] ?? []) as List;
         screen = CertificatesScreen(certificates: certs);
         break;
 
@@ -570,8 +562,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
+          color: Colors.red.withOpacity(0.1),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.red.withOpacity(0.3)),
+          border: Border.all(color: Colors.red.withOpacity(0.5)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

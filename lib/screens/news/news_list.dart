@@ -118,7 +118,7 @@ class _NewsScreenState extends State<NewsScreen> with TickerProviderStateMixin {
   // 🌟 HERO SECTION
   Widget _buildHeroSection() {
     return SliverAppBar(
-      expandedHeight: 335,
+      expandedHeight: 345,
       elevation: 0,
       pinned: true,
       backgroundColor: Colors.transparent,

@@ -1,3 +1,4 @@
+import 'package:academic_activities_mobile/screens/navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -196,7 +197,8 @@ class _HomeScreenState extends State<HomeScreen> {
             label: "Xem cuộc thi",
             icon: FontAwesomeIcons.trophy,
             onPressed: () {
-              Navigator.pushNamed(context, '/cuocthi');
+              Navigator.popUntil(context, (route) => route.isFirst);
+              Navigation.changeTab(2);
             },
           ),
         ),
@@ -205,7 +207,10 @@ class _HomeScreenState extends State<HomeScreen> {
           child: OutlineButtonCustom(
             label: "Tìm hiểu thêm",
             icon: FontAwesomeIcons.circleInfo,
-            onPressed: () {},
+            onPressed: () {
+              Navigator.popUntil(context, (route) => route.isFirst);
+              Navigation.changeTab(2);
+            },
           ),
         ),
       ],
@@ -292,7 +297,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   Text(
                     event['desc']!,
-                    style: const TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   PrimaryButton(

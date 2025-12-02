@@ -81,10 +81,7 @@ class TrainingPointsScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             "Tham gia hoạt động để tích lũy điểm!",
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade400,
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade400),
           ),
         ],
       ),
@@ -98,9 +95,7 @@ class TrainingPointsScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.only(bottom: 12),
       decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Color(0xFFE5E7EB)),
-        ),
+        border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -128,7 +123,11 @@ class TrainingPointsScreen extends StatelessWidget {
             ),
             child: const Row(
               children: [
-                FaIcon(FontAwesomeIcons.download, size: 13, color: Colors.white),
+                FaIcon(
+                  FontAwesomeIcons.download,
+                  size: 13,
+                  color: Colors.white,
+                ),
                 SizedBox(width: 7),
                 Text(
                   "Xuất PDF",
@@ -206,9 +205,9 @@ class TrainingPointsScreen extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(
-              color: Colors.white70,
+              color: Colors.white,
               fontSize: 12,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 8),
@@ -229,151 +228,251 @@ class TrainingPointsScreen extends StatelessWidget {
   /// DETAIL CARD - ENHANCED
   /// ==========================
   Widget _buildDetailCard(DiemRLDetail d) {
-    Color color = _mapColor(d.color);
-    IconData icon = _mapIcon(d.icon);
+    final color = getColorByType(d.loai);
+    final icon = getIconByType(d.loai);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(1.4), // bo viền màu
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade200),
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: color, // viền ngoài
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
-        children: [
-          // HEADER
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                // Icon
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: FaIcon(icon, color: color, size: 20),
-                  ),
-                ),
-                const SizedBox(width: 14),
-
-                // Content
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        d.title,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                          color: Color(0xFF111827),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          FaIcon(
-                            FontAwesomeIcons.calendar,
-                            size: 11,
-                            color: Colors.grey.shade500,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            d.dateFormatted,
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: color.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              d.loai,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: color,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Points
-                Text(
-                  "+${d.diem}",
-                  style: const TextStyle(
-                    color: Color(0xFF10B981),
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // DESCRIPTION
-          if (d.mota.isNotEmpty)
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Column(
+          children: [
+            // ---------------- HEADER ----------------
             Container(
-              padding: const EdgeInsets.all(14),
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF9FAFB),
-                border: Border(
-                  top: BorderSide(color: Colors.grey.shade200),
-                ),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(14),
-                  bottomRight: Radius.circular(14),
-                ),
-              ),
+              padding: const EdgeInsets.all(16),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  FaIcon(
-                    FontAwesomeIcons.circleInfo,
-                    size: 12,
-                    color: Colors.grey.shade400,
+                  // ICON
+                  Container(
+                    width: 45,
+                    height: 45,
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(child: FaIcon(icon, color: color, size: 20)),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 14),
+
                   Expanded(
-                    child: Text(
-                      d.mota,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
-                        height: 1.4,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          d.title,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF111827),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            FaIcon(
+                              FontAwesomeIcons.calendar,
+                              size: 12,
+                              color: Colors.grey.shade500,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              d.dateFormatted,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: color.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                d.loai,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: color,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  Text(
+                    "+${d.diem.toStringAsFixed(2)}",
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF16A34A),
                     ),
                   ),
                 ],
               ),
             ),
+
+            // ---------------- DETAIL SECTION ----------------
+            _buildDetailSection(d, color),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailSection(DiemRLDetail d, Color color) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        border: Border(top: BorderSide(color: Colors.grey.shade200)),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(15),
+          bottomRight: Radius.circular(15),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Hoạt động
+          _detailLine(
+            icon: FontAwesomeIcons.tag,
+            label: "Hoạt động",
+            value: d.title,
+          ),
+
+          // Loại
+          _detailLine(
+            icon: FontAwesomeIcons.list,
+            label: "Loại",
+            value: d.loai,
+          ),
+
+          // Thời gian
+          _detailLine(
+            icon: FontAwesomeIcons.clock,
+            label: "Thời gian",
+            value: d.dateFormatted,
+          ),
+
+          // Địa điểm (nếu có)
+          if (d.chiTiet?["dia_diem"] != null)
+            _detailLine(
+              icon: FontAwesomeIcons.mapMarkerAlt,
+              label: "Địa điểm",
+              value: d.chiTiet?["dia_diem"] ?? "",
+            ),
+
+          // Mô tả
+          const SizedBox(height: 10),
+          Divider(color: Colors.grey.shade300),
+          const SizedBox(height: 6),
+
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              FaIcon(
+                FontAwesomeIcons.infoCircle,
+                size: 12,
+                color: Colors.grey.shade400,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  d.mota,
+                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
+  }
+
+  Widget _detailLine({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          FaIcon(icon, size: 13, color: Colors.grey.shade700),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              "$label: $value",
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  IconData getIconByType(String loai) {
+    switch (loai.toLowerCase()) {
+      case "đạt giải":
+      case "dat giai":
+        return FontAwesomeIcons.award;
+
+      case "hỗ trợ":
+      case "ho tro":
+        return FontAwesomeIcons.handsHelping;
+
+      case "dự thi":
+      case "du thi":
+        return FontAwesomeIcons.userGraduate;
+
+      case "tham dự":
+      case "tham du":
+        return FontAwesomeIcons.calendarCheck;
+
+      default:
+        return FontAwesomeIcons.circleInfo;
+    }
+  }
+
+  Color getColorByType(String loai) {
+    switch (loai.toLowerCase()) {
+      case "đạt giải":
+      case "dat giai":
+        return const Color(0xFFF59E0B); // purple
+
+      case "hỗ trợ":
+      case "ho tro":
+        return const Color(0xFF7C3AED); // violet
+
+      case "dự thi":
+      case "du thi":
+        return const Color(0xFF16A34A); // green
+
+      case "tham dự":
+      case "tham du":
+        return const Color(0xFF2563EB); // blue
+
+      default:
+        return Colors.grey.shade600;
+    }
   }
 
   /// ==========================
@@ -394,16 +493,20 @@ class TrainingPointsScreen extends StatelessWidget {
 
   Color _mapColor(String? c) {
     switch (c) {
-      case "green":
-        return const Color(0xFF10B981);
       case "blue":
-        return const Color(0xFF3B82F6);
+        return const Color(0xFF2563EB);
+      case "green":
+        return const Color(0xFF16A34A);
       case "purple":
         return const Color(0xFFA855F7);
+      case "yellow":
+        return const Color(0xFFEAB308);
       case "orange":
-        return const Color(0xFFF59E0B);
+        return const Color(0xFFF97316);
+      case "red":
+        return const Color(0xFFDC2626);
       default:
-        return Colors.grey;
+        return Colors.grey.shade600;
     }
   }
 }

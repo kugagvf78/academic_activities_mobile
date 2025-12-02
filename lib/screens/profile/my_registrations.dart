@@ -157,183 +157,212 @@ class MyRegistrationsScreen extends StatelessWidget {
 
   // ========================= CARD =========================
   Widget _buildRegistrationCard(dynamic item) {
-    String title;
-    String? subtitle;
-    String dateStart;
-    String dateEnd;
-    String registerDate;
-    String status;
-    String statusLabel;
-    String statusColor;
-    bool isCaNhan;
+  // ======== LẤY DỮ LIỆU ========
+  String title;
+  String? subtitle;
+  String dateStart;
+  String dateEnd;
+  String registerDate;
+  String status;
+  String statusLabel;
+  String statusColor;
+  bool isCaNhan;
 
-    if (item is DangKyCaNhan) {
-      title = item.tenCuocThi;
-      subtitle = null;
-      dateStart = item.thoiGianBatDau;
-      dateEnd = item.thoiGianKetThuc;
-      registerDate = item.ngayDangKy;
-      status = item.status;
-      statusLabel = item.statusLabel;
-      statusColor = item.statusColor;
-      isCaNhan = true;
-    } else if (item is DangKyDoiThi) {
-      title = item.tenCuocThi;
-      subtitle = "Đội: ${item.tenDoiThi}";
-      dateStart = item.thoiGianBatDau;
-      dateEnd = item.thoiGianKetThuc;
-      registerDate = item.ngayDangKy;
-      status = item.status;
-      statusLabel = item.statusLabel;
-      statusColor = item.statusColor;
-      isCaNhan = false;
-    } else {
-      return const SizedBox.shrink();
-    }
+  if (item is DangKyCaNhan) {
+    title = item.tenCuocThi;
+    subtitle = null;
+    dateStart = item.thoiGianBatDau;
+    dateEnd = item.thoiGianKetThuc;
+    registerDate = item.ngayDangKy;
+    status = item.status;
+    statusLabel = item.statusLabel;
+    statusColor = item.statusColor;
+    isCaNhan = true;
+  } else if (item is DangKyDoiThi) {
+    title = item.tenCuocThi;
+    subtitle = "Đội: ${item.tenDoiThi}";
+    dateStart = item.thoiGianBatDau;
+    dateEnd = item.thoiGianKetThuc;
+    registerDate = item.ngayDangKy;
+    status = item.status;
+    statusLabel = item.statusLabel;
+    statusColor = item.statusColor;
+    isCaNhan = false;
+  } else {
+    return const SizedBox.shrink();
+  }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ========== HEADER ==========
-          Row(
+  final Color color = _statusTextColor(statusColor);
+
+  // ======== UI ========
+  return Container(
+    margin: const EdgeInsets.only(bottom: 18),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
+      border: Border.all(color: Colors.grey.shade200),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 12,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    ),
+    child: Column(
+      children: [
+        // ========================= TOP SECTION =========================
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Icon
+              // ICON TRÒN (giống activity)
               Container(
-                padding: const EdgeInsets.all(10),
+                width: 50,
+                height: 50,
                 decoration: BoxDecoration(
-                  color: isCaNhan
-                      ? Colors.green.withOpacity(0.1)
-                      : Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  shape: BoxShape.circle,
+                  color: color.withOpacity(0.12),
                 ),
-                child: FaIcon(
-                  isCaNhan
-                      ? FontAwesomeIcons.userGraduate
-                      : FontAwesomeIcons.users,
-                  color: isCaNhan ? Colors.green : Colors.blue,
-                  size: 18,
+                child: Center(
+                  child: FaIcon(
+                    isCaNhan ? FontAwesomeIcons.userGraduate : FontAwesomeIcons.users,
+                    size: 20,
+                    color: color,
+                  ),
                 ),
               ),
-              const SizedBox(width: 12),
 
-              // Title + Subtitle
+              const SizedBox(width: 14),
+
+              // TEXT ZONE
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // TITLE
                     Text(
                       title,
                       style: const TextStyle(
-                        fontSize: 15,
+                        fontSize: 17,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF111827),
+                        color: Color(0xFF0F172A),
                       ),
                     ),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade600,
+
+                    // SUBTITLE
+                    if (subtitle != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          subtitle!,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                          ),
                         ),
                       ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
 
-          const SizedBox(height: 14),
-
-          // ========== DETAILS ==========
-          _detailRow(
-            FontAwesomeIcons.calendarDays,
-            "Bắt đầu: ${_formatDate(dateStart)}",
-          ),
-          const SizedBox(height: 6),
-          _detailRow(
-            FontAwesomeIcons.calendarCheck,
-            "Kết thúc: ${_formatDate(dateEnd)}",
-          ),
-          const SizedBox(height: 6),
-          _detailRow(
-            FontAwesomeIcons.clock,
-            "Đăng ký: ${_formatDate(registerDate)}",
-          ),
-
-          const SizedBox(height: 14),
-
-          // ========== STATUS BADGE ==========
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: _statusBG(statusColor),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    FaIcon(
-                      _statusIcon(statusColor),
-                      size: 12,
-                      color: _statusTextColor(statusColor),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      statusLabel,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: _statusTextColor(statusColor),
+                    // ROLE (dùng cá nhân/đội nhóm)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Row(
+                        children: [
+                          Icon(Icons.person_pin_circle_rounded,
+                              color: Colors.grey.shade500, size: 14),
+                          const SizedBox(width: 6),
+                          Text(
+                            isCaNhan ? "Cá nhân" : "Đội nhóm",
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 10),
+
+              // STATUS BADGE
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: isCaNhan
-                      ? Colors.green.withOpacity(0.1)
-                      : Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  color: color.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  isCaNhan ? "Cá nhân" : "Đội nhóm",
+                  statusLabel,
                   style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: isCaNhan ? Colors.green.shade700 : Colors.blue.shade700,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.bold,
+                    color: color,
                   ),
                 ),
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
+        ),
+
+        // ========================= DIVIDER =========================
+        Container(
+          height: 1,
+          color: Colors.grey.shade100,
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+        ),
+
+        // ========================= BOTTOM SECTION =========================
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // DATE RANGE
+              Row(
+                children: [
+                  Icon(Icons.calendar_month_rounded,
+                      size: 16, color: Colors.grey.shade500),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      "${_formatDate(dateStart)} → ${_formatDate(dateEnd)}",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 6),
+
+              // REGISTER DATE
+              Row(
+                children: [
+                  Icon(Icons.access_time_rounded,
+                      size: 16, color: Colors.grey.shade500),
+                  const SizedBox(width: 8),
+                  Text(
+                    "Đăng ký: ${_formatDate(registerDate)}",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                ],
+              )
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   // ========================= HELPERS =========================
   Widget _detailRow(IconData icon, String text) {
