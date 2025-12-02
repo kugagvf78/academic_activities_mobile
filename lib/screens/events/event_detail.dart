@@ -1,22 +1,73 @@
+import 'package:academic_activities_mobile/cores/widgets/button.dart';
 import 'package:academic_activities_mobile/cores/widgets/custom_sliver_appbar.dart';
 import 'package:academic_activities_mobile/cores/widgets/info_tag.dart';
 import 'package:academic_activities_mobile/cores/widgets/section_tag.dart';
 import 'package:academic_activities_mobile/screens/events/cheer_register.dart';
 import 'package:academic_activities_mobile/screens/events/event_register.dart';
 import 'package:academic_activities_mobile/screens/events/support_register.dart';
+import 'package:academic_activities_mobile/services/event_service.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import '../../../models/CuocThi.dart';
 import 'package:intl/intl.dart';
-import 'package:academic_activities_mobile/cores/widgets/button.dart';
 
-class EventDetailScreen extends StatelessWidget {
-  final CuocThi event;
+class EventDetailScreen extends StatefulWidget {
+  final String id; // nhận id cuộc thi
 
-  const EventDetailScreen({super.key, required this.event});
+  const EventDetailScreen({super.key, required this.id});
+
+  @override
+  State<EventDetailScreen> createState() => _EventDetailScreenState();
+}
+
+class _EventDetailScreenState extends State<EventDetailScreen> {
+  final _service = EventService();
+  Map<String, dynamic>? event;
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDetail();
+  }
+
+  Future<void> _loadDetail() async {
+    try {
+      final data = await _service.getEventDetail(widget.id);
+
+      debugPrint("===== DỮ LIỆU NHẬN TỪ API =====");
+      debugPrint(data.toString()); // IN RA TOÀN BỘ JSON
+      debugPrint("===== HẾT JSON =====");
+
+      setState(() {
+        event = data;
+        loading = false;
+      });
+    } catch (e, stack) {
+      debugPrint("===== LỖI TẢI CHI TIẾT =====");
+      debugPrint(e.toString());
+      debugPrint(stack.toString()); // In stacktrace để biết dòng bị crash
+      debugPrint("============================");
+
+      setState(() => loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (loading) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (event == null) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: const Center(child: Text("Không tải được dữ liệu")),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: CustomScrollView(
@@ -45,37 +96,38 @@ class EventDetailScreen extends StatelessWidget {
     );
   }
 
+  // =====================================================================================
+  // HERO SECTION
+  // =====================================================================================
+
   Widget _buildHeroSection(BuildContext context) {
     return CustomHeroSliverAppBar(
-      title: event.tenCuocThi ?? "",
-      description: event.moTa ?? event.mucDich,
+      title: event!["tencuocthi"] ?? "",
+      description: event!["mota"] ?? event!["mucdich"],
       imagePath: "assets/images/patterns/pattern3.jpg",
 
-      statusText: event.trangThaiLabel,
-      statusColor: event.statusColor,
+      statusText: event!["status_label"],
+      statusColor: _statusColor(event!["status_label"]),
 
-      // ⚡ Các icon meta map vào đây
       metaItems: [
-        _metaIcon(FontAwesomeIcons.calendar, _fmtDate(event.thoiGianBatDau)),
-        if (event.thoiGianBatDau != null && event.thoiGianKetThuc != null)
-          _metaIcon(
-            FontAwesomeIcons.clock,
-            "${_fmtTime(event.thoiGianBatDau)} - ${_fmtTime(event.thoiGianKetThuc)}",
-          ),
-        if (event.diaDiem != null)
-          _metaIcon(FontAwesomeIcons.locationDot, event.diaDiem!),
+        _metaIcon(
+          FontAwesomeIcons.calendar,
+          _fmtDate(event!["thoigianbatdau"]),
+        ),
+        _metaIcon(
+          FontAwesomeIcons.clock,
+          "${_fmtTime(event!["thoigianbatdau"])} - ${_fmtTime(event!["thoigianketthuc"])}",
+        ),
+        _metaIcon(FontAwesomeIcons.locationDot, event!["diadiem"] ?? "Chưa rõ"),
         _metaIcon(
           FontAwesomeIcons.userGroup,
-          "${event.soLuongDangKy ?? 0}+ sinh viên đăng ký",
+          "${event!["soluongdangky"] ?? 0}+ sinh viên tham gia",
         ),
       ],
 
-      // ⚡ Icon bên phải (có thể null nếu không muốn)
       action: IconButton(
         icon: const Icon(Icons.share_rounded, color: Colors.white),
-        onPressed: () {
-          // TODO: share
-        },
+        onPressed: () {},
       ),
     );
   }
@@ -100,134 +152,153 @@ class EventDetailScreen extends StatelessWidget {
     );
   }
 
-  // ✳️ Nút hành động - FIXED
+  Color _statusColor(String? status) {
+    switch (status) {
+      case "Đang diễn ra":
+        return Colors.blue;
+      case "Sắp diễn ra":
+        return Colors.green;
+      case "Đã kết thúc":
+        return Colors.grey;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  // =====================================================================================
+  // ACTION BUTTONS
+  // =====================================================================================
+
   Widget _buildActionButtons(BuildContext context) {
-    if (event.trangThaiLabel == "Sắp diễn ra") {
+    if (event!["status_label"] == "Sắp diễn ra") {
       return Column(
         children: [
-          // Nút Đăng ký dự thi — PrimaryButton
           SizedBox(
             width: double.infinity,
             child: PrimaryButton(
               label: "Đăng ký dự thi",
               icon: FontAwesomeIcons.userPlus,
+              borderRadius: 15,
               onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (_) => EventRegisterScreen(
-                      tenCuocThi: event.tenCuocThi ?? "",
-                      hinhThuc: event.hinhThucThamGia ?? "CaNhan",
+                      tenCuocThi: event!["tencuocthi"],
+                      hinhThuc: event!["hinhthucthamgia"] ?? "CaNhan",
                     ),
                   ),
                 );
               },
-              borderRadius: 12,
             ),
           ),
           const SizedBox(height: 10),
 
-          // Hai nút đăng ký khác — Outline
           Row(
             children: [
               Expanded(
-                child: OutlineButtonCustom(
-                  label: "Đăng ký hỗ trợ",
-                  icon: FontAwesomeIcons.peopleCarryBox,
-                  onPressed: () {
+                child: _outlineButton(
+                  "Đăng ký hỗ trợ",
+                  FontAwesomeIcons.peopleCarryBox,
+                  Colors.deepPurple,
+                  () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => SupportRegisterScreen(
-                          tenCuocThi: event.tenCuocThi ?? "",
-                          hoatDongs: [
-                            {
-                              "id": 1,
-                              "ten": "Hỗ trợ kỹ thuật",
-                              "thoigian": "08:00 - 12:00, 12/12/2025",
-                              "diadiem": "Hội trường A",
-                              "drl": 10,
-                            },
-                            {
-                              "id": 2,
-                              "ten": "Hỗ trợ truyền thông",
-                              "thoigian": "13:00 - 17:00, 12/12/2025",
-                              "diadiem": "Sảnh khu A",
-                              "drl": 8,
-                            },
-                          ],
+                          tenCuocThi: event!["tencuocthi"],
+                          hoatDongs: event!["hotro"] ?? [],
                         ),
                       ),
                     );
                   },
-                  color: const Color.fromARGB(255, 94, 47, 204),
-                  bgColor: true,
-                  borderRadius: 12,
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: OutlineButtonCustom(
-                  label: "Đăng ký cổ vũ",
-                  icon: FontAwesomeIcons.handsClapping,
-                  onPressed: () {
+                child: _outlineButton(
+                  "Đăng ký cổ vũ",
+                  FontAwesomeIcons.handsClapping,
+                  Colors.green,
+                  () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => CheerRegisterScreen(
-                          tenCuocThi: event.tenCuocThi ?? "",
-                          hoatDongs: [
-                            {
-                              "id": 1,
-                              "ten": "Cổ vũ vòng chung kết",
-                              "thoigian": "14:00 - 17:00, 22/12/2025",
-                              "diadiem": "Hội trường lớn",
-                              "drl": 5,
-                            },
-                          ],
+                          tenCuocThi: event!["tencuocthi"],
+                          hoatDongs: event!["colvu"] ?? [],
                         ),
                       ),
                     );
                   },
-                  color: const Color.fromARGB(255, 4, 165, 111),
-                  bgColor: true,
-                  borderRadius: 12,
                 ),
               ),
             ],
           ),
         ],
       );
-    } else {
-      // Khi không thể đăng ký
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        decoration: BoxDecoration(
-          color: Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade300),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            FaIcon(FontAwesomeIcons.lock, color: Colors.grey, size: 14),
-            SizedBox(width: 8),
-            Text(
-              "Cuộc thi không nhận đăng ký",
-              style: TextStyle(
-                color: Color(0xFF6B7280),
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      );
     }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.grey.shade100,
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          FaIcon(FontAwesomeIcons.lock, size: 14, color: Colors.grey),
+          SizedBox(width: 10),
+          Text("Cuộc thi không nhận đăng ký"),
+        ],
+      ),
+    );
   }
 
-  // 📋 MAIN CONTENT
+  Widget _outlineButton(
+    String text,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return Container(
+      height: 48,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color, width: 1),
+        color: color.withOpacity(0.1),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FaIcon(icon, color: color, size: 16),
+              const SizedBox(width: 8),
+              Text(
+                text,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // =====================================================================================
+  // MAIN CONTENT
+  // =====================================================================================
+
   Widget _buildMainContent(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,22 +308,14 @@ class EventDetailScreen extends StatelessWidget {
           iconColor: Colors.blue,
           title: "Giới thiệu chung",
           child: Text(
-            event.moTa ??
-                event.mucDich ??
-                "Chưa có thông tin giới thiệu cho cuộc thi này.",
-            style: const TextStyle(
-              color: Color(0xFF374151),
-              fontSize: 14.5,
-              height: 1.6,
-            ),
+            event!["mota"] ?? event!["mucdich"] ?? "Chưa cập nhật mô tả.",
+            style: const TextStyle(height: 1.6, fontSize: 14.5),
           ),
         ),
+
         const SizedBox(height: 18),
 
-        // Đối tượng & yêu cầu
-        if (event.doiTuongThamGia != null ||
-            event.hinhThucThamGia != null ||
-            event.soLuongThanhVien != null)
+        if (event!["doituongthamgia"] != null)
           _sectionCard(
             icon: FontAwesomeIcons.bullseye,
             iconColor: Colors.green,
@@ -260,18 +323,19 @@ class EventDetailScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (event.doiTuongThamGia != null)
-                  _infoRow("Đối tượng tham gia:", event.doiTuongThamGia!),
-                if (event.hinhThucThamGia != null)
-                  _infoRow("Hình thức tham gia:", event.hinhThucThamGia!),
-                if (event.soLuongThanhVien != null)
-                  _infoRow(
-                    "Số lượng thành viên:",
-                    "${event.soLuongThanhVien} người/đội",
-                  ),
+                _infoRow("Đối tượng", event!["doituongthamgia"]),
+                _infoRow(
+                  "Hình thức tham gia",
+                  event!["hinhthucthamgia"] ?? "Không xác định",
+                ),
+                _infoRow(
+                  "Số lượng thành viên",
+                  "${event!["soluongthanhvien"] ?? 1} người/đội",
+                ),
               ],
             ),
           ),
+
         const SizedBox(height: 18),
 
         _sectionCard(
@@ -282,118 +346,89 @@ class EventDetailScreen extends StatelessWidget {
             children: [
               _infoTile(
                 icon: FontAwesomeIcons.clock,
-                title: "Thời gian tổ chức",
+                title: "Thời gian",
                 subtitle:
-                    "${_fmtDateTime(event.thoiGianBatDau)} → ${_fmtDateTime(event.thoiGianKetThuc)}",
+                    "${_fmtDateTime(event!["thoigianbatdau"])} → ${_fmtDateTime(event!["thoigianketthuc"])}",
                 color: Colors.blue,
               ),
-              const SizedBox(height: 8),
-              if (event.diaDiem != null)
+              if (event!["diadiem"] != null)
                 _infoTile(
                   icon: FontAwesomeIcons.locationDot,
                   title: "Địa điểm",
-                  subtitle: event.diaDiem!,
+                  subtitle: event!["diadiem"],
                   color: Colors.purple,
                 ),
             ],
           ),
         ),
+
         const SizedBox(height: 18),
 
-        _sectionCard(
-          icon: FontAwesomeIcons.layerGroup,
-          iconColor: Colors.indigo,
-          title: "Cấu trúc cuộc thi",
-          child: _buildCompetitionStructure(),
-        ),
-        const SizedBox(height: 18),
-
-        // Kế hoạch tổ chức
-        _sectionCard(
-          icon: FontAwesomeIcons.clipboardList,
-          iconColor: Colors.cyan,
-          title: "Kế hoạch tổ chức",
-          child: const Text(
-            "Kế hoạch tổ chức chi tiết sẽ được cập nhật trong thời gian tới. "
-            "Hiện tại, cuộc thi đang trong giai đoạn chuẩn bị nội dung và thể lệ.",
-            style: TextStyle(fontSize: 14, color: Colors.black54, height: 1.6),
-          ),
-        ),
-        const SizedBox(height: 18),
-
-        // Ban tổ chức
-        _sectionCard(
-          icon: FontAwesomeIcons.userTie,
-          iconColor: Colors.teal,
-          title: "Ban tổ chức",
-          child: Column(
-            children: [
-              _organizerTile(
-                "Ban Điều Hành",
-                "Phụ trách điều phối, phê duyệt kế hoạch",
-                5,
-              ),
-              const SizedBox(height: 10),
-              _organizerTile(
-                "Ban Truyền Thông",
-                "Thiết kế, đăng bài, quảng bá cuộc thi",
-                4,
-              ),
-              const SizedBox(height: 10),
-              _organizerTile(
-                "Ban Kỹ Thuật",
-                "Hỗ trợ hệ thống thi online, kỹ thuật chấm điểm",
-                3,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 18),
-
-        // Giải thưởng
-        if (event.duTruKinhPhi != null)
+        if (event!["vongthi"] != null)
           _sectionCard(
-            icon: FontAwesomeIcons.trophy,
-            iconColor: Colors.amber[700]!,
+            icon: FontAwesomeIcons.layerGroup,
+            iconColor: Colors.indigo,
+            title: "Cấu trúc cuộc thi",
+            child: _buildCompetitionStructure(),
+          ),
+
+        const SizedBox(height: 18),
+
+        if (event!["bantochuc"] != null)
+          _sectionCard(
+            icon: FontAwesomeIcons.userTie,
+            iconColor: Colors.teal,
+            title: "Ban tổ chức",
+            child: Column(
+              children: List.generate(
+                event!["bantochuc"].length,
+                (i) => _organizerTile(
+                  event!["bantochuc"][i]["tenban"],
+                  event!["bantochuc"][i]["motaban"],
+                  event!["bantochuc"][i]["sothanhvien"],
+                ),
+              ),
+            ),
+          ),
+
+        const SizedBox(height: 18),
+
+        if (event!["dutrukinhphi"] != null)
+          _sectionCard(
+            icon: FontAwesomeIcons.award,
+            iconColor: Colors.amber,
             title: "Giải thưởng",
             child: Column(
               children: [
+                // ====== CARD VÀNG ======
                 Container(
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Color.fromARGB(255, 255, 234, 41),
-                      width: 1,
-                    ),
-                    gradient: const LinearGradient(
-                      colors: [
-                        Color.fromARGB(188, 255, 252, 227),
-                        Color(0xFFFFF3E0),
-                      ],
-                    ),
+                    color: const Color(0xFFFFF9E6), // vàng nhạt
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.amber.shade100),
                   ),
                   child: Row(
                     children: [
-                      const SizedBox(width: 8),
+                      // ICON
                       Container(
-                        width: 54,
-                        height: 54,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: [Color(0xFFFFC107), Color(0xFFFFA000)],
-                          ),
+                        width: 58,
+                        height: 58,
+                        decoration: BoxDecoration(
+                          color: Colors.amber,
+                          borderRadius: BorderRadius.circular(50),
                         ),
                         child: const Center(
                           child: FaIcon(
                             FontAwesomeIcons.trophy,
                             color: Colors.white,
-                            size: 20,
+                            size: 26,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 20),
+                      const SizedBox(width: 18),
+
+                      // TEXT
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -401,23 +436,32 @@ class EventDetailScreen extends StatelessWidget {
                             Text(
                               "Tổng giá trị giải thưởng",
                               style: TextStyle(
-                                fontWeight: FontWeight.bold,
                                 fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF111827),
                               ),
                             ),
+                            SizedBox(height: 4),
                             Text(
                               "Dự kiến phân bổ cho các giải",
                               style: TextStyle(
-                                color: Colors.black54,
                                 fontSize: 13,
+                                color: Colors.black54,
                               ),
                             ),
+                            SizedBox(height: 4),
                             Text(
-                              "${NumberFormat("#,###", "vi_VN").format(event.duTruKinhPhi)}đ",
+                              NumberFormat("#,###", "vi_VN").format(
+                                    double.tryParse(
+                                          event!["dutrukinhphi"].toString(),
+                                        ) ??
+                                        0,
+                                  ) +
+                                  "đ",
                               style: const TextStyle(
+                                fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFFFFA000),
-                                fontSize: 18,
+                                color: Color(0xFFFF8A00), // cam đậm giống hình
                               ),
                             ),
                           ],
@@ -426,12 +470,14 @@ class EventDetailScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                SizedBox(height: 10),
+
+                const SizedBox(height: 16),
+
                 InfoTag(
+                  color: Colors.blue,
                   text:
-                      'Tất cả thí sinh vào vòng chung kết đều nhận Giấy chứng nhận tham gia.',
-                  color: Colors.blue.shade500,
-                  icon: FontAwesomeIcons.circleExclamation,
+                      "Tất cả thí sinh vào vòng chung kết đều được nhận giấy chứng nhận tham gia.",
+                  icon: FontAwesomeIcons.infoCircle,
                 ),
               ],
             ),
@@ -440,29 +486,28 @@ class EventDetailScreen extends StatelessWidget {
     );
   }
 
-  // 🔹 Helpers
+  // =====================================================================================
+  // HELPERS
+  // =====================================================================================
+
   Widget _infoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 6),
       child: RichText(
         text: TextSpan(
           style: const TextStyle(
-            fontFamily: 'RobotoCondensed', // ⚠️ Thêm dòng này
+            color: Colors.black87,
             fontSize: 14,
             height: 1.45,
-            color: Colors.black87,
           ),
           children: [
             TextSpan(
-              text: "$label ",
+              text: "$label: ",
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
             TextSpan(
               text: value,
-              style: const TextStyle(
-                fontWeight: FontWeight.normal,
-                color: Colors.black54,
-              ),
+              style: const TextStyle(color: Colors.black54),
             ),
           ],
         ),
@@ -495,11 +540,11 @@ class EventDetailScreen extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
                   color: iconColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(child: FaIcon(icon, color: iconColor, size: 18)),
               ),
@@ -514,8 +559,7 @@ class EventDetailScreen extends StatelessWidget {
               ),
             ],
           ),
-          Divider(thickness: 1, color: Colors.grey[200], height: 15),
-          const SizedBox(height: 5),
+          Divider(height: 20, color: Colors.grey.shade300),
           child,
         ],
       ),
@@ -529,14 +573,14 @@ class EventDetailScreen extends StatelessWidget {
     required Color color,
   }) {
     return Container(
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(10),
-        border: Border(left: BorderSide(color: color, width: 3)),
-      ),
+      margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border(left: BorderSide(color: color, width: 3)),
+        color: color.withOpacity(0.05),
+      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           FaIcon(icon, color: color, size: 16),
           const SizedBox(width: 10),
@@ -548,7 +592,6 @@ class EventDetailScreen extends StatelessWidget {
                   title,
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
                     fontSize: 14,
                   ),
                 ),
@@ -557,8 +600,8 @@ class EventDetailScreen extends StatelessWidget {
                   subtitle,
                   style: const TextStyle(
                     color: Colors.black54,
-                    fontSize: 13,
                     height: 1.4,
+                    fontSize: 13,
                   ),
                 ),
               ],
@@ -571,10 +614,11 @@ class EventDetailScreen extends StatelessWidget {
 
   Widget _organizerTile(String name, String desc, int members) {
     return Container(
+      margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         children: [
@@ -587,10 +631,12 @@ class EventDetailScreen extends StatelessWidget {
                 colors: [Color(0xFF2563EB), Color(0xFF0EA5E9)],
               ),
             ),
-            child: const Icon(
-              FontAwesomeIcons.users,
-              color: Colors.white,
-              size: 14,
+            child: const Center(
+              child: FaIcon(
+                FontAwesomeIcons.users,
+                color: Colors.white,
+                size: 14,
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -602,7 +648,6 @@ class EventDetailScreen extends StatelessWidget {
                   name,
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
                     fontSize: 14,
                   ),
                 ),
@@ -612,11 +657,7 @@ class EventDetailScreen extends StatelessWidget {
                 ),
                 Text(
                   "$members thành viên",
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
-                    height: 1.2,
-                  ),
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
                 ),
               ],
             ),
@@ -627,145 +668,95 @@ class EventDetailScreen extends StatelessWidget {
   }
 
   Widget _buildCompetitionStructure() {
-    // 🔹 Giả sử sau này m lấy từ API -> dùng event.vongThiList
-    final List<Map<String, dynamic>> vongThiList = [
-      {
-        "ten": "Vòng sơ loại",
-        "moTa": "Thí sinh làm bài thi trắc nghiệm trực tuyến.",
-        "thoiGianBatDau": "2025-03-10T08:00:00",
-        "thoiGianKetThuc": "2025-03-12T17:00:00",
-        "diaDiem": "Online qua hệ thống học tập",
-        "hinhThuc": "Trắc nghiệm 40 câu",
-      },
-      {
-        "ten": "Vòng bán kết",
-        "moTa": "Các đội thi trình bày ý tưởng và phản biện.",
-        "thoiGianBatDau": "2025-03-20T08:00:00",
-        "thoiGianKetThuc": "2025-03-21T17:00:00",
-        "diaDiem": "Phòng A201 - Khoa CNTT",
-        "hinhThuc": "Thuyết trình nhóm",
-      },
-      {
-        "ten": "Vòng chung kết",
-        "moTa": "Các đội thi xuất sắc tranh tài trực tiếp.",
-        "thoiGianBatDau": "2025-03-30T08:00:00",
-        "thoiGianKetThuc": "2025-03-30T17:00:00",
-        "diaDiem": "Hội trường lớn, cơ sở chính",
-        "hinhThuc": "Thi trực tiếp",
-      },
-    ];
+    if (event?["vongthi"] == null) return SizedBox();
 
-    final colors = [
-      Colors.blue,
-      Colors.purple,
-      Colors.teal,
-      Colors.amber,
-      Colors.pink,
-    ];
+    final vongThiList = event!["vongthi"];
+
+    final colors = [Colors.blue, Colors.purple, Colors.teal];
 
     return Column(
-      children: List.generate(vongThiList.length, (index) {
-        final vong = vongThiList[index];
-        final color = colors[index % colors.length];
+      children: List.generate(vongThiList.length, (i) {
+        final vong = vongThiList[i];
+        final c = colors[i % colors.length];
 
         return Container(
-          margin: const EdgeInsets.only(bottom: 14),
-          padding: const EdgeInsets.all(16),
+          margin: EdgeInsets.only(bottom: 16),
+          padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: Colors.grey.shade200),
             color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.03),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Container(
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.12),
+                      color: c.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: color, width: 1.2),
+                      border: Border.all(color: c, width: 1.2),
                     ),
                     child: Center(
                       child: Text(
-                        (index + 1).toString().padLeft(2, '0'),
+                        (i + 1).toString().padLeft(2, '0'),
                         style: TextStyle(
-                          color: color,
+                          color: c,
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 14),
+                  SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          vong["ten"],
-                          style: const TextStyle(
+                          vong["tenvongthi"] ?? "",
+                          style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 16,
-                            color: Color(0xFF111827),
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        if (vong["moTa"] != null)
-                          Text(
-                            vong["moTa"],
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Colors.black54,
-                              height: 1.5,
-                            ),
+                        SizedBox(height: 6),
+                        Text(
+                          vong["mota"] ?? "",
+                          style: TextStyle(
+                            height: 1.5,
+                            fontSize: 13,
+                            color: Colors.black54,
                           ),
+                        ),
                       ],
                     ),
                   ),
                 ],
               ),
               SizedBox(height: 12),
-
               Wrap(
                 spacing: 6,
                 runSpacing: 6,
                 children: [
-                  if (vong["thoiGianBatDau"] != null)
-                    _buildTag(
-                      FontAwesomeIcons.calendar,
-                      _fmtDateTime(vong["thoiGianBatDau"]),
-                      Colors.blue,
-                    ),
-                  if (vong["thoiGianKetThuc"] != null)
-                    _buildTag(
-                      FontAwesomeIcons.calendarCheck,
-                      _fmtDateTime(vong["thoiGianKetThuc"]),
-                      Colors.green,
-                    ),
-                  if (vong["diaDiem"] != null)
-                    _buildTag(
-                      FontAwesomeIcons.locationDot,
-                      vong["diaDiem"],
-                      Colors.purple,
-                    ),
-                  if (vong["hinhThuc"] != null)
-                    _buildTag(
-                      FontAwesomeIcons.fileLines,
-                      vong["hinhThuc"],
-                      Colors.cyan,
-                    ),
+                  _buildTag(
+                    FontAwesomeIcons.calendar,
+                    vong["thoigianbatdau"] ?? "",
+                    Colors.blue,
+                  ),
+                  _buildTag(
+                    FontAwesomeIcons.calendarCheck,
+                    vong["thoigianketthuc"] ?? "",
+                    Colors.green,
+                  ),
+                  _buildTag(
+                    FontAwesomeIcons.locationDot,
+                    vong["diadiem"] ?? "",
+                    Colors.purple,
+                  ),
                 ],
               ),
             ],
@@ -785,7 +776,7 @@ class EventDetailScreen extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          FaIcon(icon, size: 11, color: color),
+          FaIcon(icon, color: color, size: 11),
           const SizedBox(width: 5),
           Text(
             text,
@@ -800,12 +791,14 @@ class EventDetailScreen extends StatelessWidget {
     );
   }
 
-  // ⏰ Format date
+  // DATE FORMATTERS
   String _fmtDate(String? iso) => iso == null
-      ? "Chưa xác định"
+      ? "Chưa rõ"
       : DateFormat('dd/MM/yyyy').format(DateTime.parse(iso));
+
   String _fmtTime(String? iso) =>
       iso == null ? "--:--" : DateFormat('HH:mm').format(DateTime.parse(iso));
+
   String _fmtDateTime(String? iso) => iso == null
       ? "Chưa xác định"
       : DateFormat('HH:mm, dd/MM/yyyy').format(DateTime.parse(iso));

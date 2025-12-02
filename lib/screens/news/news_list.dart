@@ -1,6 +1,7 @@
 import 'package:academic_activities_mobile/cores/widgets/app_search_field.dart';
 import 'package:academic_activities_mobile/cores/widgets/app_select_field.dart';
 import 'package:academic_activities_mobile/models/TinTuc.dart';
+import 'package:academic_activities_mobile/services/news_service.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'news_detail.dart';
@@ -13,37 +14,19 @@ class NewsScreen extends StatefulWidget {
 }
 
 class _NewsScreenState extends State<NewsScreen> with TickerProviderStateMixin {
-  // Fake data demo
-  List<Map<String, dynamic>> news = [
-    {
-      "title": "Thông báo tuyển sinh lập trình mùa hè 2025",
-      "excerpt":
-          "Khóa học lập trình mùa hè dành cho sinh viên CNTT với nhiều ưu đãi...",
-      "category": "Thông báo",
-      "categoryColor": Colors.blue,
-      "views": 123,
-      "image": "assets/images/home/banner1.jpg",
-      "date": "20/11/2025",
-      "author": "Phòng Đào tạo",
-      "event": "Cuộc thi Lập trình UIT 2025",
-    },
-    {
-      "title": "Kết quả cuộc thi AI Hackathon 2025",
-      "excerpt":
-          "Cuộc thi AI Hackathon đã chính thức khép lại với những thành tích ấn tượng...",
-      "category": "Cuộc thi",
-      "categoryColor": Colors.red,
-      "views": 982,
-      "image": "assets/images/home/banner2.jpg",
-      "date": "17/11/2025",
-      "author": "CLB AI UIT",
-      "event": null,
-    },
-  ];
+  final NewsService _newsService = NewsService();
 
+  /// DATA
+  List<TinTuc> news = [];
+  List featured = [];
+  Map stats = {};
+
+  /// FILTERS
   String search = "";
   String selectedCategory = "Tất cả";
   String sort = "Mới nhất";
+
+  bool loading = true;
 
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
@@ -61,9 +44,48 @@ class _NewsScreenState extends State<NewsScreen> with TickerProviderStateMixin {
       curve: Curves.easeOut,
     );
 
-    Future.delayed(const Duration(milliseconds: 200), () {
+    fetchNews();
+  }
+
+  Future<void> fetchNews() async {
+    setState(() => loading = true);
+
+    /// Map filter → api parameters
+    String? apiCategory = {
+      "Tất cả": "all",
+      "Cuộc thi học thuật": "contest",
+      "Thông báo chung": "announcement",
+      "Hội thảo & Sự kiện": "seminar",
+    }[selectedCategory];
+
+    String? apiSort = {
+      "Mới nhất": "newest",
+      "Cũ nhất": "oldest",
+      "Xem nhiều nhất": "popular",
+    }[sort];
+
+    final res = await _newsService.getNews(
+      page: 1,
+      search: search,
+      category: apiCategory,
+      sort: apiSort,
+    );
+
+    if (!mounted) return;
+
+    if (res["success"]) {
+      news = res["news"];
+      featured = res["featured"];
+      stats = res["stats"];
+
+      loading = false;
       _fadeController.forward();
-    });
+    } else {
+      loading = false;
+      print("Lỗi API: ${res["message"]}");
+    }
+
+    setState(() {});
   }
 
   @override
@@ -81,7 +103,13 @@ class _NewsScreenState extends State<NewsScreen> with TickerProviderStateMixin {
         slivers: [
           _buildHeroSection(),
           _buildFilterSection(),
-          news.isEmpty ? _buildEmptyState() : _buildNewsList(),
+          loading
+              ? const SliverFillRemaining(
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              : news.isEmpty
+              ? _buildEmptyState()
+              : _buildNewsList(),
         ],
       ),
     );
@@ -181,20 +209,15 @@ class _NewsScreenState extends State<NewsScreen> with TickerProviderStateMixin {
           const Text(
             "Cập nhật các hoạt động, sự kiện, thông báo mới nhất của khoa CNTT.",
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 15,
-              height: 1.4,
-              fontWeight: FontWeight.w500,
-            ),
+            style: TextStyle(color: Colors.white70, fontSize: 15, height: 1.4),
           ),
           const SizedBox(height: 26),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildStat("25+", "Tin tức"),
+              _buildStat("${stats['total'] ?? 0}", "Tin tức"),
               const SizedBox(width: 28),
-              _buildStat("12", "Tháng này"),
+              _buildStat("${stats['this_month'] ?? 0}", "Tháng này"),
             ],
           ),
         ],
@@ -230,12 +253,11 @@ class _NewsScreenState extends State<NewsScreen> with TickerProviderStateMixin {
             AppSearchField(
               hint: "Tìm kiếm tin tức...",
               onChanged: (value) {
-                setState(() => search = value);
+                search = value;
+                fetchNews();
               },
             ),
-
             const SizedBox(height: 14),
-
             Row(
               children: [
                 Expanded(
@@ -249,7 +271,8 @@ class _NewsScreenState extends State<NewsScreen> with TickerProviderStateMixin {
                       "Hội thảo & Sự kiện",
                     ],
                     onChanged: (v) {
-                      setState(() => selectedCategory = v ?? "Tất cả");
+                      selectedCategory = v ?? "Tất cả";
+                      fetchNews();
                     },
                   ),
                 ),
@@ -260,7 +283,8 @@ class _NewsScreenState extends State<NewsScreen> with TickerProviderStateMixin {
                     hint: "Sắp xếp",
                     items: const ["Mới nhất", "Cũ nhất", "Xem nhiều nhất"],
                     onChanged: (v) {
-                      setState(() => sort = v ?? "Mới nhất");
+                      sort = v ?? "Mới nhất";
+                      fetchNews();
                     },
                   ),
                 ),
@@ -277,19 +301,18 @@ class _NewsScreenState extends State<NewsScreen> with TickerProviderStateMixin {
     return SliverPadding(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 40),
       sliver: SliverList(
-        delegate: SliverChildBuilderDelegate((context, i) {
-          final item = news[i];
-
-          return FadeTransition(
+        delegate: SliverChildBuilderDelegate(
+          (context, i) => FadeTransition(
             opacity: _fadeAnimation,
-            child: _buildNewsCard(item),
-          );
-        }, childCount: news.length),
+            child: _buildNewsCard(news[i]),
+          ),
+          childCount: news.length,
+        ),
       ),
     );
   }
 
-  Widget _buildNewsCard(item) {
+  Widget _buildNewsCard(TinTuc item) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -306,22 +329,35 @@ class _NewsScreenState extends State<NewsScreen> with TickerProviderStateMixin {
       ),
       child: Column(
         children: [
-          // IMAGE + CATEGORY
+          // IMAGE
           Stack(
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(20),
                 ),
-                child: Image.asset(
-                  item["image"],
-                  height: 160,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
+                child: (item.hinhAnh == null || item.hinhAnh!.isEmpty)
+                    ? Image.asset(
+                        "assets/images/news_no_image.jpg",
+                        height: 160,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      )
+                    : Image.network(
+                        item.hinhAnh!,
+                        height: 160,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Image.asset(
+                          "assets/images/news_no_image.jpg",
+                          height: 160,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
               ),
 
-              // Category badge
+              // category
               Positioned(
                 top: 12,
                 left: 12,
@@ -331,46 +367,16 @@ class _NewsScreenState extends State<NewsScreen> with TickerProviderStateMixin {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: item["categoryColor"],
+                    color: Colors.blue,
                     borderRadius: BorderRadius.circular(30),
                   ),
                   child: Text(
-                    item["category"],
+                    item.loaiTin ?? "",
                     style: const TextStyle(
                       color: Colors.white,
-                      fontWeight: FontWeight.bold,
                       fontSize: 11,
+                      fontWeight: FontWeight.bold,
                     ),
-                  ),
-                ),
-              ),
-
-              // Views
-              Positioned(
-                top: 12,
-                right: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(.85),
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.remove_red_eye,
-                        size: 13,
-                        color: Colors.grey,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        item["views"].toString(),
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ],
                   ),
                 ),
               ),
@@ -383,9 +389,8 @@ class _NewsScreenState extends State<NewsScreen> with TickerProviderStateMixin {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title
                 Text(
-                  item["title"],
+                  item.tieuDe ?? "",
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -394,13 +399,15 @@ class _NewsScreenState extends State<NewsScreen> with TickerProviderStateMixin {
                     color: Color(0xFF1A1A1A),
                   ),
                 ),
+
                 const SizedBox(height: 8),
 
-                // Excerpt
                 Text(
-                  item["excerpt"],
+                  (item.noiDung?.length ?? 0) > 120
+                      ? item.noiDung!.substring(0, 120) + "..."
+                      : (item.noiDung ?? ""),
                   maxLines: 3,
-                  style: const TextStyle(fontSize: 13, color: Colors.grey),
+                  style: const TextStyle(color: Colors.grey, fontSize: 13),
                 ),
 
                 const SizedBox(height: 12),
@@ -413,7 +420,7 @@ class _NewsScreenState extends State<NewsScreen> with TickerProviderStateMixin {
                     ),
                     const SizedBox(width: 5),
                     Text(
-                      item["date"],
+                      _formatDate(item.ngayDang),
                       style: const TextStyle(
                         fontSize: 13,
                         color: Colors.black87,
@@ -423,7 +430,7 @@ class _NewsScreenState extends State<NewsScreen> with TickerProviderStateMixin {
                     const Icon(Icons.person, size: 13, color: Colors.grey),
                     const SizedBox(width: 4),
                     Text(
-                      item["author"] ?? "Không rõ tác giả",
+                      item.tacGia ?? "Không rõ tác giả",
                       style: const TextStyle(
                         fontSize: 13,
                         color: Colors.black87,
@@ -432,99 +439,30 @@ class _NewsScreenState extends State<NewsScreen> with TickerProviderStateMixin {
                   ],
                 ),
 
-                if (item["event"] != null) ...[
-                  const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      border: Border.all(color: Colors.blue.shade200),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.link, size: 14, color: Colors.blue),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            item["event"],
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.blue,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-
                 const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      "3 giờ trước",
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
 
-                    InkWell(
-                      onTap: () {
-                        final tin = TinTuc(
-                          tieuDe: item["title"],
-                          noiDung: item["excerpt"], // hoặc nội dung thật nếu có
-                          hinhAnh: item["image"],
-                          tacGia: item["author"],
-                          luotXem: item["views"],
-                          ngayDang: item["date"],
-                          loaiTin: item["category"],
-                        );
-
-                        final relatedList = news.map((n) {
-                          return TinTuc(
-                            tieuDe: n["title"],
-                            noiDung: n["excerpt"],
-                            hinhAnh: n["image"],
-                            tacGia: n["author"],
-                            luotXem: n["views"],
-                            ngayDang: n["date"],
-                            loaiTin: n["category"],
-                          );
-                        }).toList();
-
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => NewsDetailScreen(
-                              news: tin,
-                              related: relatedList,
-                            ),
-                          ),
-                        );
-                      },
-                      child: Row(
-                        children: const [
-                          Text(
-                            "Xem thêm",
-                            style: TextStyle(
-                              color: Colors.blue,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(width: 5),
-                          Icon(
-                            Icons.arrow_right_alt,
-                            color: Colors.blue,
-                            size: 18,
-                          ),
-                        ],
+                InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => NewsDetailScreen(slug: item.maTinTuc!),
                       ),
-                    ),
-                  ],
+                    );
+                  },
+                  child: Row(
+                    children: const [
+                      Text(
+                        "Xem thêm",
+                        style: TextStyle(
+                          color: Colors.blue,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(width: 5),
+                      Icon(Icons.arrow_right_alt, color: Colors.blue, size: 18),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -564,5 +502,17 @@ class _NewsScreenState extends State<NewsScreen> with TickerProviderStateMixin {
         ),
       ),
     );
+  }
+
+  String _formatDate(String? raw) {
+    if (raw == null || raw.isEmpty) return "";
+    try {
+      final dt = DateTime.parse(raw);
+      return "${dt.day.toString().padLeft(2, '0')}/"
+          "${dt.month.toString().padLeft(2, '0')}/"
+          "${dt.year}";
+    } catch (e) {
+      return raw; // fallback nếu lỗi
+    }
   }
 }

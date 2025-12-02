@@ -4,26 +4,97 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../models/CuocThi.dart';
 import '../../../models/DatGiai.dart';
 import '../../../models/VongThi.dart';
-import 'package:academic_activities_mobile/cores/widgets/custom_sliver_appbar.dart';
 
-class KetQuaDetailScreen extends StatelessWidget {
-  final CuocThi cuocThi;
+import '../../../cores/widgets/custom_sliver_appbar.dart';
+import '../../../services/result_service.dart';
 
-  /// giaiThuong: List<Map> gồm:
-  /// { "data": DatGiai, "sinhvien": {...} OR "doithi": {...} }
-  final List<dynamic> giaiThuong;
-
-  final List<VongThi> vongThi;
+class KetQuaDetailScreen extends StatefulWidget {
+  final String maCuocThi;
 
   const KetQuaDetailScreen({
     super.key,
-    required this.cuocThi,
-    required this.giaiThuong,
-    required this.vongThi,
+    required this.maCuocThi,
   });
 
   @override
+  State<KetQuaDetailScreen> createState() => _KetQuaDetailScreenState();
+}
+
+class _KetQuaDetailScreenState extends State<KetQuaDetailScreen> {
+  final ResultService _service = ResultService();
+
+  bool loading = true;
+  CuocThi? cuocThi;
+
+  List<VongThi> vongThi = [];
+  List<Map<String, dynamic>> giaiThuong = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDetail();
+  }
+
+  Future<void> _loadDetail() async {
+    final res = await _service.getResultDetail(widget.maCuocThi);
+
+    if (!mounted) return;
+
+    if (res["success"]) {
+      // ======== Parse CuocThi ========
+      final r = res["result"];
+      cuocThi = CuocThi(
+        maCuocThi: r["macuocthi"],
+        tenCuocThi: r["tencuocthi"],
+        loaiCuocThi: r["loaicuocthi"],
+        hinhThucThamGia: r["hinhthucthamgia"],
+        thoiGianBatDau: r["thoigianbatdau"],
+        thoiGianKetThuc: r["thoigianketthuc"],
+        moTa: r["mota"] ?? "Không có mô tả",
+      );
+
+      // ======== Parse Vòng thi ========
+      vongThi = (res["rounds"] as List).map((j) {
+        return VongThi(
+          maVongThi: j["mavongthi"] ?? "",
+          tenVongThi: j["name"],
+          thuTu: j["thutu"] ?? 0,
+          thoiGianBatDau: j["start"],
+          thoiGianKetThuc: j["end"],
+          trangThai: j["winner"] != null ? "Completed" : "Pending",
+        );
+      }).toList();
+
+      // ======== Parse Top 3 & Awards ========
+      giaiThuong = (res["top3"] as List).map((j) {
+        return {
+          "data": DatGiai(
+            maDatGiai: "",
+            tenGiai: j["rank"],
+            giaiThuong: j["prize"],
+            diemRenLuyen: j["score"],
+            ngayTrao: j["date"],
+            loaiDangKy: "CaNhan",
+          ),
+          "sinhvien": {"ten": j["name"]},
+        };
+      }).toList();
+
+      setState(() => loading = false);
+    } else {
+      setState(() => loading = false);
+      print("Lỗi load detail: ${res["message"]}");
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (loading || cuocThi == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: CustomScrollView(
@@ -44,20 +115,17 @@ class KetQuaDetailScreen extends StatelessWidget {
   // ===========================================================
   Widget _buildHeroSection() {
     return CustomHeroSliverAppBar(
-      title: cuocThi.tenCuocThi ?? "Kết quả cuộc thi",
+      title: cuocThi!.tenCuocThi ?? "Kết quả cuộc thi",
       description:
-          "Ngày kết thúc: ${_fmtDate(cuocThi.thoiGianKetThuc)} • Tổng giải: ${giaiThuong.length}",
+          "Ngày kết thúc: ${_fmtDate(cuocThi!.thoiGianKetThuc)} • Tổng giải: ${giaiThuong.length}",
       imagePath: "assets/images/patterns/pattern3.jpg",
       metaItems: [
-        _meta(FontAwesomeIcons.users, "Hình thức: ${cuocThi.hinhThucThamGia}"),
-        _meta(
-          FontAwesomeIcons.calendarDays,
-          "Bắt đầu: ${_fmtDate(cuocThi.thoiGianBatDau)}",
-        ),
-        _meta(
-          FontAwesomeIcons.calendarCheck,
-          "Kết thúc: ${_fmtDate(cuocThi.thoiGianKetThuc)}",
-        ),
+        _meta(FontAwesomeIcons.users,
+            "Hình thức: ${cuocThi!.hinhThucThamGia ?? "Không rõ"}"),
+        _meta(FontAwesomeIcons.calendarDays,
+            "Bắt đầu: ${_fmtDate(cuocThi!.thoiGianBatDau)}"),
+        _meta(FontAwesomeIcons.calendarCheck,
+            "Kết thúc: ${_fmtDate(cuocThi!.thoiGianKetThuc)}"),
       ],
     );
   }
@@ -153,7 +221,7 @@ class KetQuaDetailScreen extends StatelessWidget {
       iconColor: Colors.blue,
       title: "Tổng quan cuộc thi",
       child: Text(
-        cuocThi.moTa ?? "Cuộc thi không có mô tả chi tiết.",
+        cuocThi!.moTa ?? "Không có mô tả.",
         style: const TextStyle(fontSize: 14.5, height: 1.6),
       ),
     );
@@ -177,11 +245,8 @@ class KetQuaDetailScreen extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const FaIcon(
-                  FontAwesomeIcons.checkCircle,
-                  color: Colors.blue,
-                  size: 16,
-                ),
+                const FaIcon(FontAwesomeIcons.checkCircle,
+                    color: Colors.blue, size: 16),
                 const SizedBox(width: 10),
                 Text(
                   "Vòng ${v.thuTu}: ${v.tenVongThi}",
@@ -199,10 +264,8 @@ class KetQuaDetailScreen extends StatelessWidget {
   }
 
   // ===========================================================
-  // 🏆 TOP 3 CHUNG CUỘC — UI GIỐNG WEB TEMPLATE
-  // ===========================================================
   Widget _top3Section() {
-    final top3 = giaiThuong.take(3).toList();
+    final top3 = giaiThuong;
 
     return _sectionCard(
       icon: FontAwesomeIcons.trophy,
@@ -211,109 +274,74 @@ class KetQuaDetailScreen extends StatelessWidget {
       child: Column(
         children: List.generate(top3.length, (index) {
           final g = top3[index];
-          final DatGiai data = g["data"] as DatGiai;
+          final DatGiai data = g["data"];
 
-          final String name = (data.loaiDangKy == "CaNhan")
-              ? (g["sinhvien"]?["ten"] ?? "Thí sinh")
-              : (g["doithi"]?["ten"] ?? "Đội thi");
+          final name = g["sinhvien"]?["ten"] ?? "Thí sinh";
 
-          // Medal icon & color per rank
-          Widget medal;
-          Color bgColor;
-          if (index == 0) {
-            medal = _medalIcon(Colors.amber, FontAwesomeIcons.crown);
-            bgColor = Colors.amber.shade50;
-          } else if (index == 1) {
-            medal = _medalIcon(Colors.grey.shade400, FontAwesomeIcons.medal);
-            bgColor = Colors.grey.shade50;
-          } else {
-            medal = _medalIcon(Colors.orange, FontAwesomeIcons.award);
-            bgColor = Colors.orange.shade50;
-          }
-
-          return Container(
-            margin: EdgeInsets.only(bottom: index < top3.length - 1 ? 12 : 0),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.shade200),
-              gradient: LinearGradient(
-                colors: [Colors.white, bgColor],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                // Medal icon
-                medal,
-                const SizedBox(width: 16),
-
-                // Info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF111827),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        data.tenGiai ?? "",
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        data.giaiThuong ?? "",
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Score badge
-                if (data.diemRenLuyen != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 6,
-                      horizontal: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade100,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      "${data.diemRenLuyen} điểm",
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF1565C0),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          );
+          return _buildTop3Item(index, data, name);
         }),
+      ),
+    );
+  }
+
+  Widget _buildTop3Item(int index, DatGiai data, String name) {
+    Color color;
+    IconData icon;
+
+    if (index == 0) {
+      color = Colors.amber;
+      icon = FontAwesomeIcons.crown;
+    } else if (index == 1) {
+      color = Colors.grey;
+      icon = FontAwesomeIcons.medal;
+    } else {
+      color = Colors.orange;
+      icon = FontAwesomeIcons.award;
+    }
+
+    return Container(
+      margin: EdgeInsets.only(bottom: index < 2 ? 12 : 0),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+        color: Colors.white,
+      ),
+      child: Row(
+        children: [
+          _medalIcon(color, icon),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name,
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                Text(data.tenGiai ?? "",
+                    style: TextStyle(color: Colors.grey.shade600)),
+                const SizedBox(height: 6),
+                Text(data.giaiThuong ?? ""),
+              ],
+            ),
+          ),
+          if (data.diemRenLuyen != null)
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade100,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                "${data.diemRenLuyen} điểm",
+                style: const TextStyle(
+                    color: Color(0xFF1565C0),
+                    fontWeight: FontWeight.bold),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -324,24 +352,13 @@ class KetQuaDetailScreen extends StatelessWidget {
       height: 46,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: LinearGradient(
-          colors: [color, color.withOpacity(0.6)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.3),
-            blurRadius: 8,
-            spreadRadius: 1,
-          ),
-        ],
+        color: color.withOpacity(0.9),
       ),
-      child: Center(child: FaIcon(icon, color: Colors.white, size: 20)),
+      child: Center(
+          child: FaIcon(icon, color: Colors.white, size: 20)),
     );
   }
 
-  
   // ===========================================================
   String _fmtDate(String? iso) {
     if (iso == null) return "Không rõ";

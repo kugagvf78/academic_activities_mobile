@@ -15,7 +15,7 @@ class CuocThiScreen extends StatefulWidget {
 
 class _CuocThiScreenState extends State<CuocThiScreen>
     with TickerProviderStateMixin {
-  final service = EventService();
+  final service = CuocThiService();
   List<CuocThi> danhSach = [];
   bool loading = true;
   String? selectedFilter;
@@ -82,9 +82,9 @@ class _CuocThiScreenState extends State<CuocThiScreen>
   Future<void> _taiDuLieu() async {
     setState(() => loading = true);
     try {
-      final list = await service.getEvents();
+      final data = await service.getAll();
       setState(() {
-        danhSach = list; // list là List<CuocThi>
+        danhSach = data;
         loading = false;
       });
       _fadeController.forward();
@@ -97,8 +97,8 @@ class _CuocThiScreenState extends State<CuocThiScreen>
   List<CuocThi> get filteredList {
     List<CuocThi> list = danhSach;
 
-    if (selectedFilter != null && selectedFilter != "Tất cả") {
-      list = list.where((ct) => ct.statusLabel == selectedFilter).toList();
+    if (selectedFilter != null && selectedFilter != 'Tất cả') {
+      list = list.where((ct) => ct.trangThaiLabel == selectedFilter).toList();
     }
 
     if (selectedDateRange != null) {
@@ -149,15 +149,20 @@ class _CuocThiScreenState extends State<CuocThiScreen>
       pinned: true,
       elevation: 0,
       backgroundColor: Colors.transparent,
+
+      // ❗ Quan trọng: Không cho SliverAppBar tự đổi màu
       automaticallyImplyLeading: false,
 
       flexibleSpace: LayoutBuilder(
         builder: (context, constraints) {
+          // Khi height <= toolbarHeight + 20 → coi như collapsed
           bool isCollapsed =
               constraints.biggest.height <= (kToolbarHeight + 20);
 
           return FlexibleSpaceBar(
             centerTitle: true,
+
+            // ❗ Hiện title khi collapsed
             title: isCollapsed
                 ? const Text(
                     "Đấu trường Tri thức & Sáng tạo",
@@ -169,14 +174,17 @@ class _CuocThiScreenState extends State<CuocThiScreen>
                   )
                 : null,
 
+            // ❗ AppBar sẽ đổi màu khi collapsed
             background: Stack(
               fit: StackFit.expand,
               children: [
+                // 🌄 Nền pattern
                 Image.asset(
                   'assets/images/patterns/event_pattern.jpg',
                   fit: BoxFit.cover,
                 ),
 
+                // 🟦 Gradient phủ
                 Container(
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
@@ -190,8 +198,11 @@ class _CuocThiScreenState extends State<CuocThiScreen>
                   ),
                 ),
 
+                // 🌫️ Lớp mờ
                 Container(color: Colors.black.withOpacity(0.20)),
 
+                // ⭐ Khi expanded → Hiện nội dung lớn
+                // ⭐ Khi collapsed → Ẩn nội dung
                 AnimatedOpacity(
                   duration: const Duration(milliseconds: 200),
                   opacity: isCollapsed ? 0 : 1,
@@ -213,6 +224,7 @@ class _CuocThiScreenState extends State<CuocThiScreen>
           mainAxisAlignment: MainAxisAlignment.end,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // Badge
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
@@ -243,6 +255,7 @@ class _CuocThiScreenState extends State<CuocThiScreen>
 
             const SizedBox(height: 16),
 
+            // Title
             Text.rich(
               TextSpan(
                 children: [
@@ -289,6 +302,7 @@ class _CuocThiScreenState extends State<CuocThiScreen>
 
             const SizedBox(height: 24),
 
+            // Stats
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -309,58 +323,75 @@ class _CuocThiScreenState extends State<CuocThiScreen>
     return SliverToBoxAdapter(
       child: Container(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: AppSelectField(
-                value: selectedFilter,
-                hint: "Trạng thái",
-                items: ['Tất cả', 'Đang diễn ra', 'Sắp diễn ra', 'Đã kết thúc'],
-                onChanged: (v) => setState(() => selectedFilter = v),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: GestureDetector(
-                onTap: _chonKhoangNgay,
-                child: Container(
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: selectedDateRange == null
-                          ? const Color(0xFFE5E7EB)
-                          : const Color(0xFF2563EB),
-                      width: 1.4,
-                    ),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      const FaIcon(
-                        FontAwesomeIcons.calendarDays,
-                        size: 14,
-                        color: Color(0xFF6B7280),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          selectedDateRange == null
-                              ? "Khoảng ngày"
-                              : "${_formatDate(selectedDateRange!.start)} - ${_formatDate(selectedDateRange!.end)}",
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF1F2937),
-                          ),
-                        ),
-                      ),
+            Row(
+              children: [
+                Expanded(
+                  child: AppSelectField(
+                    value: selectedFilter, // null => sẽ hiển thị hint
+                    hint: "Trạng thái", // 👈 text khi chưa chọn
+                    items: [
+                      'Tất cả',
+                      'Đang diễn ra',
+                      'Sắp diễn ra',
+                      'Đã kết thúc',
                     ],
+                    onChanged: (v) => setState(() => selectedFilter = v),
                   ),
                 ),
-              ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _chonKhoangNgay,
+                    child: Container(
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: selectedDateRange == null
+                              ? const Color(0xFFE5E7EB)
+                              : const Color(0xFF2563EB),
+                          width: 1.4,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.08),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          const FaIcon(
+                            FontAwesomeIcons.calendarDays,
+                            size: 14,
+                            color: Color(0xFF6B7280),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              selectedDateRange == null
+                                  ? "Khoảng ngày"
+                                  : "${_formatDate(selectedDateRange!.start)} - ${_formatDate(selectedDateRange!.end)}",
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1F2937),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -368,6 +399,7 @@ class _CuocThiScreenState extends State<CuocThiScreen>
     );
   }
 
+  // Helper function (nếu chưa có)
   String _formatDate(DateTime date) {
     return "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
   }
@@ -435,7 +467,7 @@ class _CuocThiScreenState extends State<CuocThiScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 🌄 Header
+          // 🌄 Header có trạng thái & chi phí
           Stack(
             children: [
               ClipRRect(
@@ -451,8 +483,6 @@ class _CuocThiScreenState extends State<CuocThiScreen>
                   colorBlendMode: BlendMode.darken,
                 ),
               ),
-
-              // trạng thái
               Positioned(
                 top: 10,
                 left: 12,
@@ -462,7 +492,7 @@ class _CuocThiScreenState extends State<CuocThiScreen>
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.9),
+                    color: ct.statusColor.withOpacity(0.9),
                     borderRadius: BorderRadius.circular(30),
                   ),
                   child: Row(
@@ -470,9 +500,43 @@ class _CuocThiScreenState extends State<CuocThiScreen>
                       const Icon(Icons.circle, size: 8, color: Colors.white),
                       const SizedBox(width: 6),
                       Text(
-                        ct.statusLabel ?? 'Không xác định',
+                        ct.trangThaiLabel ?? 'Không xác định',
                         style: const TextStyle(
                           color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 10,
+                right: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Row(
+                    children: [
+                      const FaIcon(
+                        FontAwesomeIcons.trophy,
+                        size: 12,
+                        color: Colors.amber,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        ct.chiPhiThucTe != null
+                            ? '${ct.chiPhiThucTe!.toStringAsFixed(0)} VNĐ'
+                            : 'Chưa có',
+                        style: const TextStyle(
+                          color: Colors.black87,
                           fontWeight: FontWeight.w600,
                           fontSize: 12,
                         ),
@@ -484,21 +548,20 @@ class _CuocThiScreenState extends State<CuocThiScreen>
             ],
           ),
 
-          // Nội dung
+          // 🧾 Nội dung
           Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  ct.tenCuocThi ?? "Không có tên",
+                  ct.tenCuocThi ?? 'Không có tên',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF1A1A1A),
                   ),
                 ),
-
                 if (ct.moTa != null && ct.moTa!.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 6),
@@ -511,7 +574,7 @@ class _CuocThiScreenState extends State<CuocThiScreen>
                   ),
 
                 Divider(color: Colors.grey[300], thickness: 1, height: 30),
-
+                // ⏰ Thời gian + người tham gia
                 Row(
                   children: [
                     const Icon(
@@ -522,11 +585,10 @@ class _CuocThiScreenState extends State<CuocThiScreen>
                     const SizedBox(width: 6),
                     Text(
                       ct.thoiGianBatDau != null && ct.thoiGianKetThuc != null
-                          ? "${_formatDate(DateTime.parse(ct.thoiGianBatDau!))} - ${_formatDate(DateTime.parse(ct.thoiGianKetThuc!))}"
-                          : "Chưa xác định",
+                          ? '${_formatDate(DateTime.parse(ct.thoiGianBatDau!))} - ${_formatDate(DateTime.parse(ct.thoiGianKetThuc!))}'
+                          : 'Chưa xác định',
                       style: const TextStyle(fontSize: 13),
                     ),
-
                     const Spacer(),
                     const Icon(Icons.people, size: 14, color: Colors.purple),
                     const SizedBox(width: 4),
@@ -536,9 +598,7 @@ class _CuocThiScreenState extends State<CuocThiScreen>
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 16),
-
                 SizedBox(
                   width: double.infinity,
                   child: DetailButton(
@@ -548,8 +608,29 @@ class _CuocThiScreenState extends State<CuocThiScreen>
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
-                              EventDetailScreen(id: ct.maCuocThi!),
+                          builder: (context) => EventDetailScreen(
+                            event: CuocThi(
+                              tenCuocThi: ct.tenCuocThi,
+                              moTa:
+                                  ct.moTa ??
+                                  "Đây là cuộc thi học thuật dành cho sinh viên CNTT.",
+                              mucDich:
+                                  ct.mucDich ??
+                                  "Phát triển kỹ năng lập trình và teamwork.",
+                              thoiGianBatDau:
+                                  ct.thoiGianBatDau ?? "2025-05-15T08:00:00",
+                              thoiGianKetThuc:
+                                  ct.thoiGianKetThuc ?? "2025-05-15T17:00:00",
+                              diaDiem:
+                                  ct.diaDiem ?? "Hội trường E - Đại học CNTT",
+                              doiTuongThamGia:
+                                  ct.doiTuongThamGia ?? "Sinh viên khoa CNTT",
+                              soLuongDangKy: ct.soLuongDangKy ?? 0,
+                              duTruKinhPhi: ct.duTruKinhPhi ?? 12000000,
+                              trangThaiLabel:
+                                  ct.trangThaiLabel ?? "Đang diễn ra",
+                            ),
+                          ),
                         ),
                       );
                     },

@@ -1,47 +1,75 @@
 class DiemRenLuyen {
-  final String? maDiemRL;
-  final String? maSinhVien;
-  final String? maCuocThi;
-  final String? maHoatDong;
-  final String? loaiHoatDong;
-  final double? diem;
-  final String? moTa;
-  final String? ngayCong;
+  final List<DiemRLDetail> details;
+  final int total;
+  final int base;
+  final int bonus;
+  final int finalScore;
 
   DiemRenLuyen({
-    this.maDiemRL,
-    this.maSinhVien,
-    this.maCuocThi,
-    this.maHoatDong,
-    this.loaiHoatDong,
-    this.diem,
-    this.moTa,
-    this.ngayCong,
+    required this.details,
+    required this.total,
+    required this.base,
+    required this.bonus,
+    required this.finalScore,
   });
 
   factory DiemRenLuyen.fromJson(Map<String, dynamic> json) {
     return DiemRenLuyen(
-      maDiemRL: json['madiemrl'],
-      maSinhVien: json['masinhvien'],
-      maCuocThi: json['macuocthi'],
-      maHoatDong: json['mahoatdong'],
-      loaiHoatDong: json['loaihoatdong'],
-      diem: (json['diem'] as num?)?.toDouble(),
-      moTa: json['mota'],
-      ngayCong: json['ngaycong'],
+      details: (json['details'] as List? ?? [])
+          .map((e) => DiemRLDetail.fromJson(e))
+          .toList(),
+      total: json['total'] ?? 0,
+      base: json['base'] ?? 0,
+      bonus: json['bonus'] ?? 0,
+      finalScore: json['final'] ?? 0,
     );
   }
+}
 
-  Map<String, dynamic> toJson() {
-    return {
-      'madiemrl': maDiemRL,
-      'masinhvien': maSinhVien,
-      'macuocthi': maCuocThi,
-      'mahoatdong': maHoatDong,
-      'loaihoatdong': loaiHoatDong,
-      'diem': diem,
-      'mota': moTa,
-      'ngaycong': ngayCong,
-    };
+class DiemRLDetail {
+  final String loai;
+  final String title;
+  final double diem;
+  final String ngay;
+  final String mota;
+
+  // thêm mới
+  final String? color;
+  final String? icon;
+  final Map<String, dynamic>? chiTiet;
+
+  // getter tạo ngày format
+  String get dateFormatted {
+    if (ngay.isEmpty) return "";
+    try {
+      final dt = DateTime.parse(ngay);
+      return "${dt.day}/${dt.month}/${dt.year}";
+    } catch (_) {
+      return ngay;
+    }
+  }
+
+  DiemRLDetail({
+    required this.loai,
+    required this.title,
+    required this.diem,
+    required this.ngay,
+    required this.mota,
+    this.color,
+    this.icon,
+    this.chiTiet,
+  });
+
+  factory DiemRLDetail.fromJson(Map<String, dynamic> json) {
+    return DiemRLDetail(
+      loai: json['loai'] ?? "",
+      title: json['title'] ?? "",
+      diem: double.tryParse(json['diem'].toString()) ?? 0,
+      ngay: json['ngay'] ?? "",
+      mota: json['mota'] ?? "",
+      color: json['color'],          // <── thêm
+      icon: json['icon'],            // <── thêm
+      chiTiet: json['chi_tiet'],     // <── thêm
+    );
   }
 }

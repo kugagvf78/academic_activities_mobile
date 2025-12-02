@@ -1,43 +1,57 @@
 class DangKyHoatDong {
-  final String? maDangKyHoatDong;
-  final String? maHoatDong;
-  final String? maSinhVien;
-  final String? ngayDangKy;
-  final String? trangThai;
-  final bool? diemDanhQR;
-  final String? thoiGianDiemDanh;
+  final String id;
+  final String title;        
+  final String event;        
+  final String type;         
+
+  final String dateStart;
+  final String dateEnd;
+  final String registerDate;
+
+  final bool attended;
+  final String? attendanceTime;
+
+  final bool canCancel;
+
+  final String status;
+  final String statusColor;
+  final String statusLabel;
 
   DangKyHoatDong({
-    this.maDangKyHoatDong,
-    this.maHoatDong,
-    this.maSinhVien,
-    this.ngayDangKy,
-    this.trangThai,
-    this.diemDanhQR,
-    this.thoiGianDiemDanh,
+    required this.id,
+    required this.title,
+    required this.event,
+    required this.type,
+    required this.dateStart,
+    required this.dateEnd,
+    required this.registerDate,
+    required this.attended,
+    this.attendanceTime,
+    required this.canCancel,
+    required this.status,
+    required this.statusColor,
+    required this.statusLabel,
   });
 
-  factory DangKyHoatDong.fromJson(Map<String, dynamic> json) {
+  factory DangKyHoatDong.fromJson(Map<String, dynamic> j) {
     return DangKyHoatDong(
-      maDangKyHoatDong: json['madangkyhoatdong'],
-      maHoatDong: json['mahoatdong'],
-      maSinhVien: json['masinhvien'],
-      ngayDangKy: json['ngaydangky'],
-      trangThai: json['trangthai'],
-      diemDanhQR: json['diemdanhqr'] == true,
-      thoiGianDiemDanh: json['thoigiandiemdanh'],
-    );
-  }
+      id: j['madangkyhoatdong'] ?? "",
+      title: j['tenhoatdong'] ?? "",
+      event: j['tencuocthi'] ?? "",
+      type: j['loaihoatdong'] ?? "",
 
-  Map<String, dynamic> toJson() {
-    return {
-      'madangkyhoatdong': maDangKyHoatDong,
-      'mahoatdong': maHoatDong,
-      'masinhvien': maSinhVien,
-      'ngaydangky': ngayDangKy,
-      'trangthai': trangThai,
-      'diemdanhqr': diemDanhQR,
-      'thoigiandiemdanh': thoiGianDiemDanh,
-    };
+      dateStart: j['thoigianbatdau'] ?? "",
+      dateEnd: j['thoigianketthuc'] ?? "",
+      registerDate: j['ngaydangky'] ?? "",
+
+      attended: j['diemdanhqr'] ?? false,
+      attendanceTime: j['thoigiandiemdanh'],
+
+      canCancel: j['canCancel'] ?? false,
+
+      status: j['status'] ?? "",
+      statusColor: j['statusColor'] ?? "",
+      statusLabel: j['statusLabel'] ?? "",
+    );
   }
 }

@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class CertificatesScreen extends StatelessWidget {
-  const CertificatesScreen({super.key});
+  final List certificates;
+
+  const CertificatesScreen({super.key, required this.certificates});
 
   @override
   Widget build(BuildContext context) {
@@ -16,21 +18,21 @@ class CertificatesScreen extends StatelessWidget {
           icon: const Icon(Icons.home_rounded, color: Colors.white),
           onPressed: () {
             Navigator.popUntil(context, (route) => route.isFirst);
-            Navigation.changeTab(0);  
+            Navigation.changeTab(0);
           },
         ),
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: 5,
+        itemCount: certificates.length,
         itemBuilder: (context, index) {
-          return _buildCertificateCard();
+          return _buildCertificateCard(certificates[index]);
         },
       ),
     );
   }
 
-  Widget _buildCertificateCard() {
+  Widget _buildCertificateCard(Map cert) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -65,13 +67,15 @@ class CertificatesScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
+
+          // REAL DATA
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Giải Nhì - Lập trình 2024',
-                  style: TextStyle(
+                Text(
+                  cert['award'] ?? 'Chứng nhận',
+                  style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF111827),
@@ -79,38 +83,18 @@ class CertificatesScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Ngày cấp: 20/03/2024',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey.shade600,
-                  ),
+                  "Sự kiện: ${cert['event']}",
+                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.green.shade50,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text(
-                        'Đã nhận',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.green,
-                        ),
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 6),
+                Text(
+                  "Ngày cấp: ${cert['date']}",
+                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
                 ),
               ],
             ),
           ),
+
           IconButton(
             onPressed: () {},
             icon: const FaIcon(

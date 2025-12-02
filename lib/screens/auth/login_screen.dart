@@ -1,5 +1,13 @@
+import 'dart:convert';
+import 'package:academic_activities_mobile/cores/widgets/error_toast.dart';
+import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:academic_activities_mobile/cores/widgets/input.dart';
 import 'package:academic_activities_mobile/cores/widgets/password_input.dart';
+import 'package:academic_activities_mobile/screens/home.dart';
+import 'package:academic_activities_mobile/screens/navigation.dart';
+import 'package:academic_activities_mobile/services/auth_service.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -86,11 +94,11 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         const SizedBox(height: 4),
-        const Text(
-          "Quản lý cuộc thi học thuật khoa Công nghệ Thông tin trường Đại Học Công Thương TP.HCM",
-          style: TextStyle(color: Colors.grey, fontSize: 14),
-          textAlign: TextAlign.center,
-        ),
+        // const Text(
+        //   "Quản lý cuộc thi học thuật khoa Công nghệ Thông tin trường Đại Học Công Thương TP.HCM",
+        //   style: TextStyle(color: Colors.grey, fontSize: 14),
+        //   textAlign: TextAlign.center,
+        // ),
       ],
     );
   }
@@ -158,6 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
           label: "Tên đăng nhập",
           hint: "Nhập MSSV",
           icon: Icons.person,
+          controller: username,
         ),
 
         const SizedBox(height: 16),
@@ -168,6 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
           onChanged: (value) {
             print(value);
           },
+          controller: password,
         ),
 
         const SizedBox(height: 12),
@@ -212,8 +222,54 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _loginButton() {
     return GestureDetector(
-      onTap: () {
-        debugPrint("Login with: ${username.text} / ${password.text}");
+      onTap: () async {
+        if (username.text.isEmpty || password.text.isEmpty) {
+          return _showError("Vui lòng nhập đầy đủ thông tin");
+        }
+
+        final auth = AuthService();
+
+        try {
+          final authData = await auth.login(username.text, password.text);
+
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          await prefs.setString("access_token", authData.accessToken);
+
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const Navigation(), // ⬅️ MÀN ĐÍCH
+              ),
+            );
+          }
+        } catch (e) {
+          if (e is DioException) {
+            dynamic raw = e.response?.data;
+
+            String message = "Có lỗi xảy ra, vui lòng thử lại!";
+
+            // Trường hợp Laravel trả JSON Map
+            if (raw is Map && raw.containsKey("message")) {
+              message = raw["message"];
+            }
+            // Trường hợp Laravel trả JSON nhưng dưới dạng String
+            else if (raw is String) {
+              try {
+                final parsed = jsonDecode(raw);
+                if (parsed is Map && parsed.containsKey("message")) {
+                  message = parsed["message"];
+                }
+              } catch (_) {
+                // ignore error
+              }
+            }
+
+            ErrorToast.show(context, message);
+          } else {
+            ErrorToast.show(context, 'Có lỗi xảy ra');
+          }
+        }
       },
       child: Container(
         width: double.infinity,
@@ -238,6 +294,134 @@ class _LoginScreenState extends State<LoginScreen> {
               color: Colors.white,
               fontWeight: FontWeight.w700,
               fontSize: 16,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showError(String message) {
+    // Rung nhẹ
+    HapticFeedback.mediumImpact();
+
+    // Tạo overlay để hiện toast từ giữa màn hình
+    final overlay = Overlay.of(context);
+    late OverlayEntry overlayEntry;
+
+    overlayEntry = OverlayEntry(
+      builder: (context) => _ToastWidget(
+        message: message,
+        onDismiss: () => overlayEntry.remove(),
+      ),
+    );
+
+    overlay.insert(overlayEntry);
+
+    // Tự mất sau 3 giây
+    Future.delayed(const Duration(seconds: 3), () {
+      if (overlayEntry.mounted) overlayEntry.remove();
+    });
+  }
+}
+
+// Toast Widget đẹp, nhỏ gọn, bay lên rồi mờ dần
+class _ToastWidget extends StatefulWidget {
+  final String message;
+  final VoidCallback onDismiss;
+
+  const _ToastWidget({required this.message, required this.onDismiss});
+
+  @override
+  State<_ToastWidget> createState() => _ToastWidgetState();
+}
+
+class _ToastWidgetState extends State<_ToastWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<Offset> _offsetAnimation;
+  late Animation<double> _opacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    _offsetAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.6),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.elasticOut));
+
+    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.4)),
+    );
+
+    _controller.forward();
+
+    // Bắt đầu mờ dần sau 2 giây
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) {
+        _controller.reverse().then((_) => widget.onDismiss());
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: Center(
+        child: SlideTransition(
+          position: _offsetAnimation,
+          child: FadeTransition(
+            opacity: _opacityAnimation,
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 320),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+              margin: const EdgeInsets.symmetric(horizontal: 32),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.red.withOpacity(0.4),
+                    blurRadius: 30,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.error_outline_rounded,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      widget.message,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w600,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

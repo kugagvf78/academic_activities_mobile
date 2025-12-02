@@ -4,12 +4,14 @@ class PasswordInput extends StatefulWidget {
   final String label;
   final String hint;
   final Function(String)? onChanged;
+  final TextEditingController? controller; // ⬅️ NEW: controller
 
   const PasswordInput({
     super.key,
     required this.label,
     required this.hint,
     this.onChanged,
+    this.controller, // ⬅️ NEW
   });
 
   @override
@@ -28,28 +30,29 @@ class _PasswordInputState extends State<PasswordInput> {
         Row(
           children: [
             Text(
-              "Mật khẩu",
+              widget.label,
               style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF1F2937),
                 fontSize: 16,
               ),
             ),
-
-              const SizedBox(width: 4),
-              const Text(
-                "*",
-                style: TextStyle(
-                  color: Colors.red,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+            const SizedBox(width: 4),
+            const Text(
+              "*",
+              style: TextStyle(
+                color: Colors.red,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
               ),
-            ],
+            ),
+          ],
         ),
+
         const SizedBox(height: 6),
 
         TextField(
+          controller: widget.controller, // ⬅️ NEW
           obscureText: _obscure,
           onChanged: widget.onChanged,
           style: const TextStyle(
@@ -61,7 +64,6 @@ class _PasswordInputState extends State<PasswordInput> {
             hintText: widget.hint,
             hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
 
-            // 🔒 Prefix icon ổ khóa
             prefixIcon: Icon(Icons.lock, color: Colors.grey.shade500, size: 20),
 
             suffixIcon: IconButton(

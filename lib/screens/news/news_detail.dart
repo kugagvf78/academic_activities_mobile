@@ -1,36 +1,70 @@
-import 'package:academic_activities_mobile/cores/widgets/custom_sliver_appbar.dart';
 import 'package:academic_activities_mobile/models/TinTuc.dart';
+import 'package:academic_activities_mobile/services/news_service.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-class NewsDetailScreen extends StatelessWidget {
-  final TinTuc news;
-  final List<TinTuc> related;
+class NewsDetailScreen extends StatefulWidget {
+  final String slug; // 🔥 chỉ nhận slug
 
-  const NewsDetailScreen({
-    super.key,
-    required this.news,
-    this.related = const [],
-  });
+  const NewsDetailScreen({super.key, required this.slug});
+
+  @override
+  State<NewsDetailScreen> createState() => _NewsDetailScreenState();
+}
+
+class _NewsDetailScreenState extends State<NewsDetailScreen> {
+  final NewsService _newsService = NewsService();
+
+  bool loading = true;
+  TinTuc? news;
+  List<TinTuc> related = [];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchDetail();
+  }
+
+  Future<void> fetchDetail() async {
+    final res = await _newsService.getNewsDetail(widget.slug);
+
+    if (!mounted) return;
+
+    if (res["success"]) {
+      setState(() {
+        news = res["news"];
+        related = (res["related"] as List)
+            .map((e) => TinTuc.fromJson(e))
+            .toList();
+        loading = false;
+      });
+    } else {
+      loading = false;
+      setState(() {});
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          _buildHeroSection(context),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : news == null
+          ? const Center(child: Text("Không tìm thấy bài viết"))
+          : CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                _buildHeroSection(context),
 
-          // 🔥 Nội dung
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: _buildMainContent(context),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: _buildMainContent(context),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -42,7 +76,6 @@ class NewsDetailScreen extends StatelessWidget {
       automaticallyImplyLeading: false,
       backgroundColor: Colors.transparent,
       elevation: 0,
-
       flexibleSpace: LayoutBuilder(
         builder: (context, constraints) {
           final bool collapsed =
@@ -52,27 +85,31 @@ class NewsDetailScreen extends StatelessWidget {
           return Stack(
             fit: StackFit.expand,
             children: [
-              // 🟦 Lớp trắng đảm bảo màu không bị ảnh hưởng
               Container(color: Colors.white),
 
-              // 🖼 Ảnh nền CHỈ hiển thị khi chưa collapsed
+              // ẢNH NỀN (tự động chọn asset nếu không có URL)
               AnimatedOpacity(
                 opacity: collapsed ? 0 : 1,
                 duration: const Duration(milliseconds: 200),
-                child: Image.network(
-                  news.hinhAnh ?? "",
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Image.asset(
-                    "assets/images/home/banner1.jpg",
-                    fit: BoxFit.cover,
-                  ),
-                ),
+                child: (news!.hinhAnh == null || news!.hinhAnh!.isEmpty)
+                    ? Image.asset(
+                        "assets/images/news_no_image.jpg",
+                        fit: BoxFit.cover,
+                      )
+                    : Image.network(
+                        news!.hinhAnh!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Image.asset(
+                          "assets/images/no_image.png",
+                          fit: BoxFit.cover,
+                        ),
+                      ),
               ),
 
               AnimatedOpacity(
                 opacity: collapsed ? 0 : 1,
                 duration: const Duration(milliseconds: 200),
-                child: Container(color: Colors.black.withOpacity(0.25)),
+                child: Container(color: Colors.black.withOpacity(0.3)),
               ),
 
               AnimatedOpacity(
@@ -81,12 +118,11 @@ class NewsDetailScreen extends StatelessWidget {
                 child: Container(color: const Color.fromARGB(255, 44, 98, 212)),
               ),
 
-              // 📌 FlexibleSpaceBar – hiện title lúc collapsed
               FlexibleSpaceBar(
                 titlePadding: const EdgeInsets.only(bottom: 16),
                 title: collapsed
                     ? Text(
-                        news.tieuDe ?? "",
+                        news!.tieuDe ?? "",
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -103,7 +139,6 @@ class NewsDetailScreen extends StatelessWidget {
         },
       ),
 
-      // Back button
       leading: Padding(
         padding: const EdgeInsets.only(left: 10),
         child: IconButton(
@@ -112,7 +147,6 @@ class NewsDetailScreen extends StatelessWidget {
         ),
       ),
 
-      // Share button
       actions: [
         IconButton(
           icon: const Icon(Icons.share_rounded, color: Colors.white),
@@ -130,8 +164,6 @@ class NewsDetailScreen extends StatelessWidget {
       children: [
         _buildInfoHeader(),
         const SizedBox(height: 18),
-        _buildArticleImage(),
-        const SizedBox(height: 18),
         _buildContent(),
         const SizedBox(height: 20),
         _buildShareSection(),
@@ -143,13 +175,11 @@ class NewsDetailScreen extends StatelessWidget {
     );
   }
 
-
-  // 🏷 INFO HEADER (category – views – date – author)
+  // 🏷 INFO HEADER
   Widget _buildInfoHeader() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Category + view
         Row(
           children: [
             Container(
@@ -159,21 +189,23 @@ class NewsDetailScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(30),
               ),
               child: Text(
-                news.loaiTin ?? "Tin tức",
+                news!.loaiTin ?? "Tin tức",
                 style: const TextStyle(
-                  fontSize: 11,
                   color: Colors.white,
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
+
             const SizedBox(width: 10),
+
             Row(
               children: [
                 const Icon(Icons.remove_red_eye, size: 14, color: Colors.grey),
                 const SizedBox(width: 4),
                 Text(
-                  "${news.luotXem ?? 0} lượt xem",
+                  "${news!.luotXem ?? 0} lượt xem",
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
@@ -184,7 +216,7 @@ class NewsDetailScreen extends StatelessWidget {
         const SizedBox(height: 14),
 
         Text(
-          news.tieuDe ?? "",
+          news!.tieuDe ?? "",
           style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w800,
@@ -198,36 +230,23 @@ class NewsDetailScreen extends StatelessWidget {
           children: [
             const Icon(Icons.calendar_today, size: 14, color: Colors.blue),
             const SizedBox(width: 6),
-            Text(news.ngayDang ?? ""),
+            Text(news!.ngayDang ?? ""),
+
             const SizedBox(width: 20),
+
             const Icon(Icons.person, size: 14, color: Colors.grey),
             const SizedBox(width: 6),
-            Text(news.tacGia ?? "Không rõ"),
+            Text(news!.tacGia ?? "Không rõ"),
           ],
         ),
       ],
     );
   }
 
-  // 🌄 ARTICLE IMAGE (ảnh chính bài viết)
-  Widget _buildArticleImage() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
-      child: Image.network(
-        news.hinhAnh ?? "",
-        errorBuilder: (_, __, ___) =>
-            Image.asset("assets/images/home/banner1.jpg", fit: BoxFit.cover),
-        height: 220,
-        width: double.infinity,
-        fit: BoxFit.cover,
-      ),
-    );
-  }
-
   // ✍️ CONTENT
   Widget _buildContent() {
     return Text(
-      news.noiDung ?? "",
+      news!.noiDung ?? "",
       style: const TextStyle(
         fontSize: 15,
         height: 1.55,
@@ -302,18 +321,14 @@ class NewsDetailScreen extends StatelessWidget {
     );
   }
 
-  // 📰 Related
+  // 📰 Related News
   Widget _buildRelatedNews() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           "Tin tức liên quan",
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1A1A1A),
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
 
@@ -323,39 +338,64 @@ class NewsDetailScreen extends StatelessWidget {
   }
 
   Widget _relatedCard(TinTuc item) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.asset(
-              "assets/images/home/banner1.jpg",
-              width: 65,
-              height: 65,
-              fit: BoxFit.cover,
-            ),
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => NewsDetailScreen(slug: item.maTinTuc!),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              item.tieuDe ?? "",
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1A1A1A),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Row(
+          children: [
+            // FIX: Thumbnail size must be FIXED
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: (item.hinhAnh == null || item.hinhAnh!.isEmpty)
+                  ? Image.asset(
+                      "assets/images/news_no_image.jpg",
+                      width: 65,
+                      height: 65,
+                      fit: BoxFit.cover,
+                    )
+                  : Image.network(
+                      item.hinhAnh!,
+                      width: 65,
+                      height: 65,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Image.asset(
+                        "assets/images/news_no_image.jpg",
+                        width: 65,
+                        height: 65,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+            ),
+
+            const SizedBox(width: 12),
+
+            Expanded(
+              child: Text(
+                item.tieuDe ?? "",
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

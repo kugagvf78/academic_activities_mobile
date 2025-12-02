@@ -1,13 +1,21 @@
 import 'package:academic_activities_mobile/cores/widgets/appbar.dart';
+import 'package:academic_activities_mobile/models/DiemRenLuyen.dart';
 import 'package:academic_activities_mobile/screens/navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class TrainingPointsScreen extends StatelessWidget {
-  const TrainingPointsScreen({super.key});
+  final DiemRenLuyen? diemRenLuyen;
+
+  const TrainingPointsScreen({super.key, required this.diemRenLuyen});
 
   @override
   Widget build(BuildContext context) {
+    final base = diemRenLuyen?.base ?? 0;
+    final bonus = diemRenLuyen?.bonus ?? 0;
+    final total = diemRenLuyen?.finalScore ?? 0;
+    final details = diemRenLuyen?.details ?? [];
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBarWidget(
@@ -16,206 +24,66 @@ class TrainingPointsScreen extends StatelessWidget {
           icon: const Icon(Icons.home_rounded, color: Colors.white),
           onPressed: () {
             Navigator.popUntil(context, (route) => route.isFirst);
-            Navigation.changeTab(0);  
+            Navigation.changeTab(0);
           },
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            const SizedBox(height: 8),
-            _buildTotalPointsCard(),
-            const SizedBox(height: 16),
-            _buildPointsByCategory(),
-            const SizedBox(height: 16),
-            _buildSemesterHistory(),
-          ],
-        ),
-      ),
+
+      body: details.isEmpty
+          ? _buildEmptyState()
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _header(),
+                  const SizedBox(height: 16),
+                  _buildOverview(base, bonus, total),
+                  const SizedBox(height: 24),
+                  const Text(
+                    "Chi tiết điểm cộng",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ...details.map((d) => _buildDetailCard(d)).toList(),
+                ],
+              ),
+            ),
     );
   }
 
-  Widget _buildTotalPointsCard() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF10B981), Color(0xFF059669)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF10B981).withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
+  /// ==========================
+  /// EMPTY STATE
+  /// ==========================
+  Widget _buildEmptyState() {
+    return Center(
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          FaIcon(
+            FontAwesomeIcons.chartLine,
+            size: 64,
+            color: Colors.grey.shade300,
+          ),
+          const SizedBox(height: 16),
           const Text(
-            'Tổng điểm rèn luyện',
+            "Chưa có điểm rèn luyện",
             style: TextStyle(
-              fontSize: 16,
-              color: Colors.white70,
+              fontSize: 18,
+              color: Color(0xFF6B7280),
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 12),
-          const Text(
-            '85',
-            style: TextStyle(
-              fontSize: 56,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-              height: 1,
-            ),
-          ),
           const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Text(
-              'Xếp loại: Tốt',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPointsByCategory() {
-    final categories = [
-      {
-        'title': 'Học tập',
-        'points': 25,
-        'max': 30,
-        'icon': FontAwesomeIcons.book,
-        'color': Colors.blue,
-      },
-      {
-        'title': 'Hoạt động chính trị',
-        'points': 18,
-        'max': 20,
-        'icon': FontAwesomeIcons.flag,
-        'color': Colors.red,
-      },
-      {
-        'title': 'Hoạt động văn hóa',
-        'points': 20,
-        'max': 20,
-        'icon': FontAwesomeIcons.music,
-        'color': Colors.purple,
-      },
-      {
-        'title': 'Hoạt động thể thao',
-        'points': 12,
-        'max': 15,
-        'icon': FontAwesomeIcons.footballBall,
-        'color': Colors.orange,
-      },
-      {
-        'title': 'Tình nguyện',
-        'points': 10,
-        'max': 15,
-        'icon': FontAwesomeIcons.handHoldingHeart,
-        'color': Colors.pink,
-      },
-    ];
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Điểm theo hạng mục',
+          Text(
+            "Tham gia hoạt động để tích lũy điểm!",
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF111827),
-            ),
-          ),
-          const SizedBox(height: 16),
-          ...categories.map((cat) => _buildCategoryItem(cat)).toList(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryItem(Map<String, dynamic> category) {
-    final percentage = (category['points'] / category['max']) * 100;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: category['color'].withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: FaIcon(
-                  category['icon'],
-                  color: category['color'],
-                  size: 16,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  category['title'],
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF111827),
-                  ),
-                ),
-              ),
-              Text(
-                '${category['points']}/${category['max']}',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: category['color'],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: percentage / 100,
-              backgroundColor: Colors.grey.shade200,
-              color: category['color'],
-              minHeight: 8,
+              fontSize: 14,
+              color: Colors.grey.shade400,
             ),
           ),
         ],
@@ -223,96 +91,319 @@ class TrainingPointsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSemesterHistory() {
-    final semesters = [
-      {'name': 'HK1 2023-2024', 'points': 85, 'rank': 'Tốt'},
-      {'name': 'HK2 2022-2023', 'points': 82, 'rank': 'Tốt'},
-      {'name': 'HK1 2022-2023', 'points': 78, 'rank': 'Khá'},
-    ];
-
+  /// ==========================
+  /// HEADER + EXPORT BUTTON
+  /// ==========================
+  Widget _header() {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Lịch sử theo học kỳ',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF111827),
-            ),
-          ),
-          const SizedBox(height: 16),
-          ...semesters.map((sem) => _buildSemesterItem(sem)).toList(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSemesterItem(Map<String, dynamic> semester) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+      padding: const EdgeInsets.only(bottom: 12),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Color(0xFFE5E7EB)),
+        ),
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const FaIcon(
-            FontAwesomeIcons.calendarDays,
-            color: Color(0xFF6B7280),
-            size: 16,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              semester['name'],
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF111827),
-              ),
+          const Text(
+            "Điểm rèn luyện",
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1F2937),
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
             decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              borderRadius: BorderRadius.circular(8),
+              color: const Color(0xFF2563EB),
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF2563EB).withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            child: Text(
-              '${semester['points']} điểm',
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2563EB),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            semester['rank'],
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey.shade600,
+            child: const Row(
+              children: [
+                FaIcon(FontAwesomeIcons.download, size: 13, color: Colors.white),
+                SizedBox(width: 7),
+                Text(
+                  "Xuất PDF",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  /// ==========================
+  /// 3 CARD: BASE – BONUS – FINAL
+  /// ==========================
+  Widget _buildOverview(int base, int bonus, int total) {
+    return Row(
+      children: [
+        Expanded(
+          child: _box(
+            "Điểm cơ bản",
+            base.toString(),
+            const Color(0xFF3B82F6),
+            const Color(0xFF2563EB),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _box(
+            "Điểm cộng thêm",
+            "+$bonus",
+            const Color(0xFF10B981),
+            const Color(0xFF059669),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _box(
+            "Tổng điểm",
+            total.toString(),
+            const Color(0xFFA855F7),
+            const Color(0xFF9333EA),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _box(String label, String value, Color c1, Color c2) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [c1, c2],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: c1.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 28,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// ==========================
+  /// DETAIL CARD - ENHANCED
+  /// ==========================
+  Widget _buildDetailCard(DiemRLDetail d) {
+    Color color = _mapColor(d.color);
+    IconData icon = _mapIcon(d.icon);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // HEADER
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Icon
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: FaIcon(icon, color: color, size: 20),
+                  ),
+                ),
+                const SizedBox(width: 14),
+
+                // Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        d.title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: Color(0xFF111827),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          FaIcon(
+                            FontAwesomeIcons.calendar,
+                            size: 11,
+                            color: Colors.grey.shade500,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            d.dateFormatted,
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: color.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              d.loai,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: color,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Points
+                Text(
+                  "+${d.diem}",
+                  style: const TextStyle(
+                    color: Color(0xFF10B981),
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // DESCRIPTION
+          if (d.mota.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.all(14),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FAFB),
+                border: Border(
+                  top: BorderSide(color: Colors.grey.shade200),
+                ),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(14),
+                  bottomRight: Radius.circular(14),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FaIcon(
+                    FontAwesomeIcons.circleInfo,
+                    size: 12,
+                    color: Colors.grey.shade400,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      d.mota,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// ==========================
+  /// SUPPORTING FUNCTIONS
+  /// ==========================
+  IconData _mapIcon(String? icon) {
+    switch (icon) {
+      case "fa-user-graduate":
+        return FontAwesomeIcons.userGraduate;
+      case "fa-hands-helping":
+        return FontAwesomeIcons.handsHelping;
+      case "fa-users":
+        return FontAwesomeIcons.users;
+      default:
+        return FontAwesomeIcons.circleInfo;
+    }
+  }
+
+  Color _mapColor(String? c) {
+    switch (c) {
+      case "green":
+        return const Color(0xFF10B981);
+      case "blue":
+        return const Color(0xFF3B82F6);
+      case "purple":
+        return const Color(0xFFA855F7);
+      case "orange":
+        return const Color(0xFFF59E0B);
+      default:
+        return Colors.grey;
+    }
   }
 }

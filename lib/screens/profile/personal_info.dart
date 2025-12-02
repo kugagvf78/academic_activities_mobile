@@ -2,26 +2,37 @@ import 'package:academic_activities_mobile/screens/navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:academic_activities_mobile/cores/widgets/appbar.dart';
+import 'package:academic_activities_mobile/models/NguoiDung.dart';
+import 'package:academic_activities_mobile/models/SinhVien.dart';
+import 'package:academic_activities_mobile/models/Lop.dart';
+import 'package:intl/intl.dart';
 
 class PersonalInfoScreen extends StatelessWidget {
-  const PersonalInfoScreen({super.key});
+  final NguoiDung user;
+  final SinhVien profile;
+  final Lop? lop;
+
+  const PersonalInfoScreen({
+    super.key,
+    required this.user,
+    required this.profile,
+    this.lop,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-
       appBar: AppBarWidget(
         title: "Thông Tin Cá Nhân",
         action: IconButton(
           icon: const Icon(Icons.home_rounded, color: Colors.white),
           onPressed: () {
             Navigator.popUntil(context, (route) => route.isFirst);
-            Navigation.changeTab(0);  
+            Navigation.changeTab(0);
           },
         ),
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -39,35 +50,23 @@ class PersonalInfoScreen extends StatelessWidget {
     );
   }
 
-  // --------------------------------------------------------------
-  // META ITEM
-  // --------------------------------------------------------------
-  Widget _meta(IconData icon, String text) {
-    return Row(
-      children: [
-        FaIcon(icon, size: 15, color: Colors.black87),
-        const SizedBox(width: 6),
-        Text(text, style: const TextStyle(fontSize: 13)),
-      ],
-    );
-  }
-
-  // --------------------------------------------------------------
-  // CARDS
-  // --------------------------------------------------------------
-
   Widget _buildInfoCard() {
     return _card(
       icon: FontAwesomeIcons.user,
       iconColor: const Color(0xFF2563EB),
       title: "Thông tin cơ bản",
       children: [
-        _buildInfoRow('Họ và tên', 'Lê Trung Kiên'),
-        _buildInfoRow('MSSV', '2001221872'),
-        _buildInfoRow('Lớp', '13DHTH02'),
-        _buildInfoRow('Khoa', 'Công nghệ Thông tin'),
-        _buildInfoRow('Ngày sinh', '15/08/2002'),
-        _buildInfoRow('Giới tính', 'Nam'),
+        _buildInfoRow('Họ và tên', user.hoten ?? 'N/A'),
+        _buildInfoRow('MSSV', profile.masinhvien ?? 'N/A'),
+        _buildInfoRow('Lớp', lop?.tenlop ?? 'N/A'),
+        _buildInfoRow('Khoa', 'Công nghệ Thông tin'), // Có thể thêm từ API
+        // _buildInfoRow(
+        //   'Ngày sinh',
+        //   profile.ngaysinh != null
+        //       ? DateFormat('dd/MM/yyyy').format(profile.ngaysinh!)
+        //       : 'N/A',
+        // ),
+        // _buildInfoRow('Giới tính', profile.gioitinh ?? 'N/A'),
       ],
     );
   }
@@ -78,9 +77,9 @@ class PersonalInfoScreen extends StatelessWidget {
       iconColor: Colors.green,
       title: "Thông tin liên hệ",
       children: [
-        _buildInfoRow('Email', '2001221872@student.hcmue.edu.vn'),
-        _buildInfoRow('Số điện thoại', '0123456789'),
-        _buildInfoRow('Địa chỉ', 'TP. Hồ Chí Minh'),
+        _buildInfoRow('Email', user.email ?? 'N/A'),
+        _buildInfoRow('Số điện thoại', user.sodienthoai ?? 'N/A'),
+        // _buildInfoRow('Địa chỉ', profile.diachi ?? 'TP. Hồ Chí Minh'),
       ],
     );
   }
@@ -92,16 +91,18 @@ class PersonalInfoScreen extends StatelessWidget {
       title: "Thông tin học tập",
       children: [
         _buildInfoRow('Hệ đào tạo', 'Đại học chính quy'),
-        _buildInfoRow('Khóa học', '2020 - 2024'),
+        _buildInfoRow(
+          'Khóa học',
+          profile.namnhaphoc != null
+              ? '${profile.namnhaphoc} - ${profile.namnhaphoc! + 4}'
+              : 'N/A',
+        ),
         _buildInfoRow('Trạng thái', 'Đang học'),
-        _buildInfoRow('GPA', '3.45 / 4.0'),
+        _buildInfoRow('GPA', 'N/A'), // Có thể thêm từ API
       ],
     );
   }
 
-  // --------------------------------------------------------------
-  // GENERIC CARD
-  // --------------------------------------------------------------
   Widget _card({
     required IconData icon,
     required Color iconColor,
@@ -145,7 +146,6 @@ class PersonalInfoScreen extends StatelessWidget {
               ),
             ],
           ),
-
           const Divider(height: 30),
           ...children,
         ],
@@ -153,9 +153,6 @@ class PersonalInfoScreen extends StatelessWidget {
     );
   }
 
-  // --------------------------------------------------------------
-  // INFO ROW
-  // --------------------------------------------------------------
   Widget _buildInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),

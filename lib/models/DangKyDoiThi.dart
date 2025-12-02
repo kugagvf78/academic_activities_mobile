@@ -1,39 +1,72 @@
 class DangKyDoiThi {
-  final String? maDangKyDoi;
-  final String? maCuocThi;
-  final String? maDoiThi;
-  final String? ngayDangKy;
-  final String? trangThai;
-  final String? ghiChu;
+  final String id;
+  final String tenCuocThi;
+
+  final String tenDoiThi;
+  final String? vaiTro;
+
+  final String thoiGianBatDau;
+  final String thoiGianKetThuc;
+  final String submitDeadline;
+
+  final String ngayDangKy;
+
+  final String trangThai;
+  final String status;
+  final String statusLabel;
+  final String statusColor;
+
+  final bool canCancel;
+  final bool canSubmit;
+
+  final String? maBaiThi;
+  final String? thoiGianNop;
+  final String? trangThaiNop;
 
   DangKyDoiThi({
-    this.maDangKyDoi,
-    this.maCuocThi,
-    this.maDoiThi,
-    this.ngayDangKy,
-    this.trangThai,
-    this.ghiChu,
+    required this.id,
+    required this.tenCuocThi,
+    required this.tenDoiThi,
+    this.vaiTro,
+    required this.thoiGianBatDau,
+    required this.thoiGianKetThuc,
+    required this.submitDeadline,
+    required this.ngayDangKy,
+    required this.trangThai,
+    required this.status,
+    required this.statusLabel,
+    required this.statusColor,
+    required this.canCancel,
+    required this.canSubmit,
+    this.maBaiThi,
+    this.thoiGianNop,
+    this.trangThaiNop,
   });
 
-  factory DangKyDoiThi.fromJson(Map<String, dynamic> json) {
+  factory DangKyDoiThi.fromJson(Map<String, dynamic> j) {
     return DangKyDoiThi(
-      maDangKyDoi: json['madangkydoi'],
-      maCuocThi: json['macuocthi'],
-      maDoiThi: json['madoithi'],
-      ngayDangKy: json['ngaydangky'],
-      trangThai: json['trangthai'],
-      ghiChu: json['ghichu'],
-    );
-  }
+      id: j["id"],
+      tenCuocThi: j["tencuocthi"],
+      tenDoiThi: j["tendoithi"],
+      vaiTro: j["vaitro"],
 
-  Map<String, dynamic> toJson() {
-    return {
-      'madangkydoi': maDangKyDoi,
-      'macuocthi': maCuocThi,
-      'madoithi': maDoiThi,
-      'ngaydangky': ngayDangKy,
-      'trangthai': trangThai,
-      'ghichu': ghiChu,
-    };
+      thoiGianBatDau: j["thoigianbatdau"],
+      thoiGianKetThuc: j["thoigianketthuc"],
+      submitDeadline: j["submitDeadline"],
+
+      ngayDangKy: j["ngaydangky"],
+
+      trangThai: j["trangthai"],
+      status: j["status"],
+      statusLabel: j["statusLabel"],
+      statusColor: j["statusColor"],
+
+      canCancel: j["canCancel"],
+      canSubmit: j["canSubmit"],
+
+      maBaiThi: j["mabaithi"],
+      thoiGianNop: j["thoigiannop"],
+      trangThaiNop: j["trangthainop"],
+    );
   }
 }

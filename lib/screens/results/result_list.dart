@@ -1,16 +1,15 @@
 import 'package:academic_activities_mobile/models/CuocThi.dart';
 import 'package:academic_activities_mobile/models/DatGiai.dart';
 import 'package:academic_activities_mobile/models/VongThi.dart';
-import 'package:academic_activities_mobile/models/DoiThi.dart';
-import 'package:academic_activities_mobile/models/SinhVien.dart';
+
 import 'package:academic_activities_mobile/screens/results/result_detail.dart';
+import 'package:academic_activities_mobile/services/result_service.dart';
 
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'package:academic_activities_mobile/cores/widgets/button.dart';
 import 'package:academic_activities_mobile/cores/widgets/app_search_field.dart';
-import 'package:academic_activities_mobile/cores/widgets/app_select_field.dart';
 
 class KetQuaScreen extends StatefulWidget {
   const KetQuaScreen({super.key});
@@ -21,9 +20,12 @@ class KetQuaScreen extends StatefulWidget {
 
 class _KetQuaScreenState extends State<KetQuaScreen>
     with TickerProviderStateMixin {
-  List<dynamic> danhSach = [];
+  final ResultService _service = ResultService();
+
+  List<Map<String, dynamic>> danhSach = [];
   bool loading = true;
-  String searchText = '';
+
+  String searchText = "";
   String? selectedYear;
   String? selectedType;
 
@@ -50,123 +52,52 @@ class _KetQuaScreenState extends State<KetQuaScreen>
   Future<void> _taiDuLieu() async {
     setState(() => loading = true);
 
-    await Future.delayed(const Duration(milliseconds: 500));
+    final response = await _service.getResults(
+      page: 1,
+      search: searchText,
+      year: selectedYear,
+      type: selectedType,
+    );
 
-    // ===========================
-    // FAKE DATA THEO ĐÚNG MODEL
-    // ===========================
-    final fakeData = [
-      {
-        "date": "15/05/2025",
-        "soluongthamgia": 120,
-        "soluonggiai": 10,
+    if (!mounted) return;
 
-        "cuocthi": CuocThi(
-          maCuocThi: "CT001",
-          tenCuocThi: "Cuộc thi Lập Trình Sinh Viên 2025",
-          loaiCuocThi: "Lập trình thuật toán",
-          thoiGianBatDau: "2025-05-10",
-          thoiGianKetThuc: "2025-05-15",
-        ),
+    if (response["success"]) {
+      // API trả về results["data"]
+      final rawList = response["results"]["data"] as List;
 
-        // ====== GIẢI ======
-        "giai": [
-          {
-            "data": DatGiai(
-              maDatGiai: "DG001",
-              tenGiai: "Giải Nhất",
-              loaiDangKy: "CaNhan",
-              giaiThuong: "Laptop + 5,000,000đ",
-              diemRenLuyen: 10,
-              ngayTrao: "2025-05-15",
-            ),
-            "sinhvien": {"ten": "Nguyễn Văn A", "lop": "IT01"},
-          },
-          {
-            "data": DatGiai(
-              maDatGiai: "DG002",
-              tenGiai: "Giải Nhì",
-              loaiDangKy: "CaNhan",
-              giaiThuong: "3,000,000đ",
-              diemRenLuyen: 7,
-              ngayTrao: "2025-05-15",
-            ),
-            "sinhvien": {"ten": "Trần Thị B", "lop": "IT02"},
-          },
-        ],
+      final parsed = rawList.map((json) {
+        return {
+          "date": json["date"],
+          "soluongthamgia": json["soluongthamgia"],
+          "soluonggiai": json["soluonggiai"],
 
-        // ====== VÒNG THI ======
-        "vong": [
-          VongThi(
-            maVongThi: "V01",
-            tenVongThi: "Vòng 1: Sơ loại",
-            thuTu: 1,
-            thoiGianBatDau: "2025-05-01",
-            thoiGianKetThuc: "2025-05-05",
-            trangThai: "Completed",
+          // Cuộc thi
+          "cuocthi": CuocThi(
+            maCuocThi: json["macuocthi"],
+            tenCuocThi: json["tencuocthi"],
+            loaiCuocThi: json["loaicuocthi"],
+            thoiGianBatDau: "",
+            thoiGianKetThuc: json["thoigianketthuc"],
           ),
-          VongThi(
-            maVongThi: "V02",
-            tenVongThi: "Bán kết",
-            thuTu: 2,
-            thoiGianBatDau: "2025-05-06",
-            thoiGianKetThuc: "2025-05-10",
-            trangThai: "Completed",
-          ),
-        ],
-      },
 
-      // =====================
-      // Cuộc thi 2
-      // =====================
-      {
-        "date": "20/11/2024",
-        "soluongthamgia": 80,
-        "soluonggiai": 8,
+          // Chỉ lấy winner hiển thị tạm
+          "winner": json["winner"] ?? "Chưa công bố"
+        };
+      }).toList();
 
-        "cuocthi": CuocThi(
-          maCuocThi: "CT002",
-          tenCuocThi: "Hackathon UIT 2024",
-          loaiCuocThi: "Sáng tạo & Ứng dụng",
-          thoiGianBatDau: "2024-11-20",
-          thoiGianKetThuc: "2024-12-12",
-        ),
+      setState(() {
+        danhSach = parsed;
+        loading = false;
+      });
 
-        "giai": [
-          {
-            "data": DatGiai(
-              maDatGiai: "DG010",
-              tenGiai: "Quán quân",
-              loaiDangKy: "DoiNhom",
-              giaiThuong: "15,000,000đ",
-              diemRenLuyen: 12,
-              ngayTrao: "2024-12-12",
-            ),
-            "doithi": {"ten": "UIT Hackers", "sothanhvien": 4},
-          },
-        ],
-
-        "vong": [
-          VongThi(
-            maVongThi: "V10",
-            tenVongThi: "Build sản phẩm",
-            thuTu: 1,
-            thoiGianBatDau: "2024-11-20",
-            thoiGianKetThuc: "2024-11-22",
-            trangThai: "Completed",
-          ),
-        ],
-      },
-    ];
-
-    setState(() {
-      danhSach = fakeData;
-      loading = false;
-    });
-
-    _fadeController.forward();
+      _fadeController.forward();
+    } else {
+      setState(() => loading = false);
+      print("Lỗi API: ${response["message"]}");
+    }
   }
 
+  // ================= BUILD UI ================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -176,33 +107,30 @@ class _KetQuaScreenState extends State<KetQuaScreen>
           _buildHeroSection(),
           SliverToBoxAdapter(child: _buildFilterBar()),
 
-          if (loading)
-            const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (ctx, i) => FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: _buildResultCard(danhSach[i]),
+          loading
+              ? const SliverFillRemaining(
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              : SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (ctx, i) => FadeTransition(
+                        opacity: _fadeAnimation,
+                        child: _buildResultCard(danhSach[i]),
+                      ),
+                      childCount: danhSach.length,
+                    ),
                   ),
-                  childCount: danhSach.length,
                 ),
-              ),
-            ),
         ],
       ),
     );
   }
 
   // ================= CARD =================
-  Widget _buildResultCard(dynamic item) {
+  Widget _buildResultCard(Map<String, dynamic> item) {
     final CuocThi cuocThi = item["cuocthi"];
-    final List<dynamic> giai = item["giai"];
-    final List<VongThi> vong = item["vong"];
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -239,7 +167,6 @@ class _KetQuaScreenState extends State<KetQuaScreen>
                 ),
 
                 const SizedBox(height: 6),
-
                 Text(
                   "Chủ đề: ${cuocThi.loaiCuocThi ?? "Không rõ"}",
                   style: const TextStyle(color: Colors.grey),
@@ -249,15 +176,13 @@ class _KetQuaScreenState extends State<KetQuaScreen>
 
                 Row(
                   children: [
-                    const Icon(
-                      Icons.calendar_today,
-                      size: 14,
-                      color: Colors.blue,
-                    ),
+                    const Icon(Icons.calendar_today,
+                        size: 14, color: Colors.blue),
                     const SizedBox(width: 6),
                     Text(item["date"], style: const TextStyle(fontSize: 13)),
                     const Spacer(),
-                    const Icon(Icons.people, size: 14, color: Colors.purple),
+                    const Icon(Icons.people,
+                        size: 14, color: Colors.purple),
                     const SizedBox(width: 6),
                     Text("${item["soluongthamgia"]} thí sinh"),
                   ],
@@ -270,14 +195,12 @@ class _KetQuaScreenState extends State<KetQuaScreen>
                   child: DetailButton(
                     label: "Xem chi tiết",
                     icon: FontAwesomeIcons.arrowRight,
-                    onPressed: () {
+                    onPressed: () async {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (_) => KetQuaDetailScreen(
-                            cuocThi: cuocThi,
-                            giaiThuong: giai,
-                            vongThi: vong,
+                            maCuocThi: cuocThi.maCuocThi!,
                           ),
                         ),
                       );
@@ -293,7 +216,7 @@ class _KetQuaScreenState extends State<KetQuaScreen>
   }
 
   // ================== HERO ==================
-  Widget _buildHeroSection() {
+ Widget _buildHeroSection() {
     return SliverAppBar(
       expandedHeight: 260,
       pinned: true,
@@ -470,7 +393,10 @@ class _KetQuaScreenState extends State<KetQuaScreen>
       padding: const EdgeInsets.all(16),
       child: AppSearchField(
         hint: "Tìm kiếm theo tên cuộc thi...",
-        onChanged: (v) => setState(() => searchText = v),
+        onChanged: (v) {
+          searchText = v;
+          _taiDuLieu(); // load API theo search
+        },
       ),
     );
   }

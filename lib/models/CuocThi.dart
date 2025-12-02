@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 class CuocThi {
   final String? maCuocThi;
   final String? tenCuocThi;
@@ -13,12 +11,22 @@ class CuocThi {
   final int? soLuongThanhVien;
   final int? soLuongDangKy;
   final String? hinhThucThamGia;
-  final String? trangThaiLabel;
+  final String? trangThai;
+
+  final String? statusLabel;
+  final String? statusColor;
+  final String? tenBoMon;
+  final String? motaBoMon;
+  final String? truongBoMon;
+  final String? slug;
+
+  // 🔥 Các trường bổ sung từ API
+  final List<dynamic>? vongThi;
+  final List<dynamic>? banToChuc;
+  final Map<String, dynamic>? keHoach;
+
   final double? duTruKinhPhi;
-  final double? chiPhiThucTe;
-  final String? maBoMon;
-  final String? ngayTao;
-  final String? ngayCapNhat;
+  final int? soLuongDoi;
 
   CuocThi({
     this.maCuocThi,
@@ -33,12 +41,21 @@ class CuocThi {
     this.soLuongThanhVien,
     this.soLuongDangKy,
     this.hinhThucThamGia,
-    this.trangThaiLabel,
+    this.trangThai,
+
+    this.statusLabel,
+    this.statusColor,
+    this.tenBoMon,
+    this.motaBoMon,
+    this.truongBoMon,
+    this.slug,
+
+    this.vongThi,
+    this.banToChuc,
+    this.keHoach,
+
     this.duTruKinhPhi,
-    this.chiPhiThucTe,
-    this.maBoMon,
-    this.ngayTao,
-    this.ngayCapNhat,
+    this.soLuongDoi,
   });
 
   factory CuocThi.fromJson(Map<String, dynamic> json) {
@@ -52,69 +69,30 @@ class CuocThi {
       thoiGianBatDau: json['thoigianbatdau']?.toString(),
       thoiGianKetThuc: json['thoigianketthuc']?.toString(),
       diaDiem: json['diadiem']?.toString(),
-      soLuongThanhVien: int.tryParse(
-        json['soluongthanhvien']?.toString() ?? '0',
-      ),
-      soLuongDangKy: int.tryParse(json['soluongdangky']?.toString() ?? '0'),
+      soLuongThanhVien: int.tryParse(json['soluongthanhvien']?.toString() ?? "0"),
+      soLuongDangKy: int.tryParse(json['soluongdangky']?.toString() ?? "0"),
       hinhThucThamGia: json['hinhthucthamgia']?.toString(),
+      trangThai: json['trangthai']?.toString(),
 
-      // ✅ Đúng key của API
-      trangThaiLabel: json['status_label']?.toString(),
+      // Thông tin bổ sung
+      statusLabel: json['status_label']?.toString(),
+      statusColor: json['status_color']?.toString(),
+      tenBoMon: json['tenbomon']?.toString(),
+      motaBoMon: json['motabomon']?.toString(),
+      truongBoMon: json['truongbomon']?.toString(),
+      slug: json['slug']?.toString(),
 
-      duTruKinhPhi: double.tryParse(json['dutrukinhphi']?.toString() ?? '0.0'),
-      chiPhiThucTe: double.tryParse(json['chiphithucte']?.toString() ?? '0.0'),
-      maBoMon: json['mabomon']?.toString(),
-      ngayTao: json['ngaytao']?.toString(),
-      ngayCapNhat: json['ngaycapnhat']?.toString(),
+      // 🔥 Field List
+      vongThi: json['vongthi'] != null ? List.from(json['vongthi']) : [],
+      banToChuc: json['bantochuc'] != null ? List.from(json['bantochuc']) : [],
+      keHoach: json['kehoach'],
+
+      // 🔥 Field số
+      duTruKinhPhi: double.tryParse(json['dutrukinhphi']?.toString() ?? "0"),
+
+      soLuongDoi: json['soluongdoi'] != null
+          ? int.tryParse(json['soluongdoi'].toString())
+          : null,
     );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'macuocthi': maCuocThi,
-      'tencuocthi': tenCuocThi,
-      'loaicuocthi': loaiCuocThi,
-      'mota': moTa,
-      'mucdich': mucDich,
-      'doituongthamgia': doiTuongThamGia,
-      'thoigianbatdau': thoiGianBatDau,
-      'thoigianketthuc': thoiGianKetThuc,
-      'diadiem': diaDiem,
-      'soluongthanhvien': soLuongThanhVien,
-      'soluongdangky': soLuongDangKy,
-      'hinhthucthamgia': hinhThucThamGia,
-      'trangthai_label': trangThaiLabel,
-      'dutrukinhphi': duTruKinhPhi,
-      'chiphithucte': chiPhiThucTe,
-      'mabomon': maBoMon,
-      'ngaytao': ngayTao,
-      'ngaycapnhat': ngayCapNhat,
-    };
-  }
-
-  String get translatedStatus {
-    switch (trangThaiLabel?.trim()) {
-      case 'Đang diễn ra':
-        return 'Ongoing';
-      case 'Sắp diễn ra':
-        return 'Upcoming';
-      case 'Đã kết thúc':
-        return 'Ended';
-      default:
-        return 'Unknown';
-    }
-  }
-
-  Color get statusColor {
-    switch (trangThaiLabel?.trim()) {
-      case 'Đang diễn ra':
-        return const Color(0xFF1E88E5); // Blue
-      case 'Sắp diễn ra':
-        return const Color(0xFF43A047); // Green
-      case 'Đã kết thúc':
-        return const Color(0xFF9E9E9E); // Grey
-      default:
-        return Colors.grey;
-    }
   }
 }

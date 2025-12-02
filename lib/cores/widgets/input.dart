@@ -5,7 +5,8 @@ class LabeledInput extends StatelessWidget {
   final String hint;
   final IconData? icon;
   final Function(String)? onChanged;
-  final bool required; // ⛳ NEW: có yêu cầu nhập hay không
+  final bool required;
+  final TextEditingController? controller;   // ⬅️ NEW: ADD CONTROLLER
 
   const LabeledInput({
     super.key,
@@ -13,7 +14,8 @@ class LabeledInput extends StatelessWidget {
     required this.hint,
     this.icon,
     this.onChanged,
-    this.required = true, // mặc định = true
+    this.required = true,
+    this.controller,   // ⬅️ ALLOW PASSING CONTROLLER
   });
 
   @override
@@ -33,7 +35,6 @@ class LabeledInput extends StatelessWidget {
               ),
             ),
 
-            // Nếu required == true → hiện dấu sao đỏ
             if (required) ...[
               const SizedBox(width: 4),
               const Text(
@@ -52,6 +53,7 @@ class LabeledInput extends StatelessWidget {
 
         // INPUT
         TextField(
+          controller: controller, // ⬅️ USE THE CONTROLLER HERE
           onChanged: onChanged,
           style: const TextStyle(
             fontSize: 16,
