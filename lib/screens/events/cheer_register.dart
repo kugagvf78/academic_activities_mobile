@@ -1,15 +1,20 @@
 import 'package:academic_activities_mobile/cores/widgets/button.dart';
 import 'package:academic_activities_mobile/cores/widgets/custom_sliver_appbar.dart';
+import 'package:academic_activities_mobile/cores/widgets/error_toast.dart';
+import 'package:academic_activities_mobile/cores/widgets/success_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:academic_activities_mobile/cores/widgets/input.dart';
+import '../../services/event_service.dart';
 
 class CheerRegisterScreen extends StatefulWidget {
+  final String slug; // 🔥 slug chuẩn để gọi API
   final String tenCuocThi;
   final List<Map<String, dynamic>> hoatDongs;
 
   const CheerRegisterScreen({
     super.key,
+    required this.slug,
     required this.tenCuocThi,
     required this.hoatDongs,
   });
@@ -21,12 +26,53 @@ class CheerRegisterScreen extends StatefulWidget {
 class _CheerRegisterScreenState extends State<CheerRegisterScreen> {
   String? selectedHoatDong;
 
-  // Student info
   String name = "";
   String mssv = "";
   String email = "";
   String phone = "";
 
+  void _submitCheer() async {
+  if (selectedHoatDong == null) {
+    ErrorToast.show(context, "Vui lòng chọn hoạt động cổ vũ");
+    return;
+  }
+
+  if (name.isEmpty || mssv.isEmpty || email.isEmpty || phone.isEmpty) {
+    ErrorToast.show(context, "Vui lòng nhập đầy đủ thông tin sinh viên");
+    return;
+  }
+
+  try {
+    final res = await EventService().registerCheer(
+      mahoatdong: selectedHoatDong!,
+      masinhvien: mssv,
+    );
+
+    if (res["success"] == false) {
+      ErrorToast.show(context, res["message"] ?? "Có lỗi xảy ra");
+      return;
+    }
+
+    // 🔥 SUCCESS TOAST
+    SuccessToast.show(
+      context,
+      res["message"] ?? "Đăng ký cổ vũ thành công!",
+    );
+
+    // 🔁 Auto close after short delay
+    Future.delayed(const Duration(milliseconds: 900), () {
+      Navigator.pop(context);
+    });
+
+  } catch (e) {
+    ErrorToast.show(
+      context,
+      e.toString().replaceFirst("Exception: ", ""),
+    );
+  }
+}
+
+  // UI build
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -67,13 +113,13 @@ class _CheerRegisterScreenState extends State<CheerRegisterScreen> {
               ),
             ],
           ),
-
           SliverToBoxAdapter(child: _buildContent()),
         ],
       ),
     );
   }
 
+  // CONTENT FORM
   Widget _buildContent() {
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -93,39 +139,33 @@ class _CheerRegisterScreenState extends State<CheerRegisterScreen> {
 
             const SizedBox(height: 20),
 
-            //------------------------------------------------
-            // LIST HOẠT ĐỘNG RADIO
-            //------------------------------------------------
             _label("Chọn hoạt động cổ vũ *"),
-
             const SizedBox(height: 10),
 
             Column(
               children: widget.hoatDongs.map((hd) {
                 return _radioItem(
-                  id: hd["id"].toString(),
-                  title: hd["ten"],
-                  time: hd["thoigian"],
-                  location: hd["diadiem"],
-                  drl: hd["drl"].toString(),
+                  id: hd["mahoatdong"].toString(),
+                  title: hd["tenhoatdong"] ?? "Hoạt động",
+                  time: hd["thoigianbatdau"] ?? "",
+                  location: hd["diadiem"] ?? "",
+                  drl: hd["drl"]?.toString() ?? "0",
                 );
               }).toList(),
             ),
 
             const SizedBox(height: 28),
 
-            //------------------------------------------------
-            // THÔNG TIN SINH VIÊN
-            //------------------------------------------------
             _title("Thông tin sinh viên"),
-
             const SizedBox(height: 16),
+
             LabeledInput(
               label: "Họ và tên *",
               hint: "Nguyễn Văn A",
               onChanged: (v) => name = v,
             ),
             const SizedBox(height: 16),
+
             LabeledInput(
               label: "Mã số sinh viên *",
               hint: "2024001234",
@@ -139,6 +179,7 @@ class _CheerRegisterScreenState extends State<CheerRegisterScreen> {
               onChanged: (v) => email = v,
             ),
             const SizedBox(height: 16),
+
             LabeledInput(
               label: "Số điện thoại *",
               hint: "0912345678",
@@ -146,17 +187,8 @@ class _CheerRegisterScreenState extends State<CheerRegisterScreen> {
             ),
 
             const SizedBox(height: 30),
-
-            //------------------------------------------------
-            // NOTE / WARNING
-            //------------------------------------------------
             _noteBox(),
-
             const SizedBox(height: 30),
-
-            //------------------------------------------------
-            // SUBMIT BUTTON
-            //------------------------------------------------
             _submitButton(),
           ],
         ),
@@ -164,10 +196,7 @@ class _CheerRegisterScreenState extends State<CheerRegisterScreen> {
     );
   }
 
-  // ------------------------------
-  // UI PIECES
-  // ------------------------------
-
+  // UI helpers
   Widget _title(String text) {
     return Center(
       child: Column(
@@ -230,7 +259,6 @@ class _CheerRegisterScreenState extends State<CheerRegisterScreen> {
               onChanged: (v) => setState(() => selectedHoatDong = v as String),
               activeColor: Colors.blue,
             ),
-
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -242,15 +270,15 @@ class _CheerRegisterScreenState extends State<CheerRegisterScreen> {
                       fontSize: 15,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
                       const Icon(
                         FontAwesomeIcons.calendar,
-                        size: 14,
+                        size: 13,
                         color: Colors.blue,
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 5),
                       Text(time),
                     ],
                   ),
@@ -259,10 +287,10 @@ class _CheerRegisterScreenState extends State<CheerRegisterScreen> {
                     children: [
                       const Icon(
                         FontAwesomeIcons.locationDot,
-                        size: 14,
+                        size: 13,
                         color: Colors.red,
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 5),
                       Text(location),
                     ],
                   ),
@@ -271,10 +299,10 @@ class _CheerRegisterScreenState extends State<CheerRegisterScreen> {
                     children: [
                       const Icon(
                         FontAwesomeIcons.star,
-                        size: 14,
+                        size: 13,
                         color: Colors.orange,
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 5),
                       Text(
                         "+$drl điểm rèn luyện",
                         style: const TextStyle(
@@ -303,9 +331,9 @@ class _CheerRegisterScreenState extends State<CheerRegisterScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.orange.shade200),
       ),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
+        children: [
           Row(
             children: [
               Icon(FontAwesomeIcons.lightbulb, color: Colors.orange),
@@ -349,7 +377,7 @@ class _CheerRegisterScreenState extends State<CheerRegisterScreen> {
       child: PrimaryButton(
         label: "Đăng Ký Cổ Vũ",
         icon: Icons.volunteer_activism,
-        onPressed: () {},
+        onPressed: _submitCheer,
         borderRadius: 12,
       ),
     );

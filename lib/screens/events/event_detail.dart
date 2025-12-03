@@ -189,7 +189,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (_) => EventRegisterScreen(
-                      id: event!["macuocthi"], // 👈 quan trọng
+                      id: event!["macuocthi"],
                       tenCuocThi: event!["tencuocthi"],
                       hinhThuc: event!["hinhthucthamgia"] ?? "CaNhan",
                     ),
@@ -203,7 +203,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
           Row(
             children: [
-              Expanded(
+              // ---------------------
+              // 🟣 ĐĂNG KÝ HỖ TRỢ
+              Flexible(
+                fit: FlexFit.loose,
                 child: _outlineButton(
                   "Đăng ký hỗ trợ",
                   FontAwesomeIcons.peopleCarryBox,
@@ -213,16 +216,22 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (_) => SupportRegisterScreen(
+                          macuocthi: event!["macuocthi"], 
                           tenCuocThi: event!["tencuocthi"],
-                          hoatDongs: event!["hotro"] ?? [],
+                          hoatDongs: List<Map<String, dynamic>>.from(
+                            event!["hotro"] ?? [],
+                          ),
                         ),
                       ),
                     );
                   },
                 ),
               ),
-              const SizedBox(width: 10),
-              Expanded(
+
+              SizedBox(width: 10),
+              // 🟢 ĐĂNG KÝ CỔ VŨ
+              Flexible(
+                fit: FlexFit.loose,
                 child: _outlineButton(
                   "Đăng ký cổ vũ",
                   FontAwesomeIcons.handsClapping,
@@ -232,8 +241,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (_) => CheerRegisterScreen(
+                          slug: event!["slug"],
                           tenCuocThi: event!["tencuocthi"],
-                          hoatDongs: event!["colvu"] ?? [],
+                          hoatDongs: List<Map<String, dynamic>>.from(
+                            event!["colvu"] ?? [],
+                          ),
                         ),
                       ),
                     );

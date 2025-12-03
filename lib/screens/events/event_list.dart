@@ -1,3 +1,4 @@
+import 'package:academic_activities_mobile/cores/widgets/app_search_field.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../models/CuocThi.dart';
@@ -20,6 +21,7 @@ class _CuocThiScreenState extends State<CuocThiScreen>
   bool loading = true;
   String? selectedFilter;
   DateTimeRange? selectedDateRange;
+  String search = "";
 
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
@@ -97,10 +99,21 @@ class _CuocThiScreenState extends State<CuocThiScreen>
   List<CuocThi> get filteredList {
     List<CuocThi> list = danhSach;
 
+    // 🔍 Lọc theo từ khóa
+    if (search.isNotEmpty) {
+      final lower = search.toLowerCase();
+      list = list.where((ct) {
+        return (ct.tenCuocThi ?? "").toLowerCase().contains(lower) ||
+            (ct.moTa ?? "").toLowerCase().contains(lower);
+      }).toList();
+    }
+
+    // 📌 Lọc theo trạng thái
     if (selectedFilter != null && selectedFilter != "Tất cả") {
       list = list.where((ct) => ct.statusLabel == selectedFilter).toList();
     }
 
+    // 📅 Lọc theo ngày
     if (selectedDateRange != null) {
       final start = selectedDateRange!.start;
       final end = selectedDateRange!.end;
@@ -307,60 +320,82 @@ class _CuocThiScreenState extends State<CuocThiScreen>
 
   Widget _buildFilterSection() {
     return SliverToBoxAdapter(
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-        child: Row(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+        child: Column(
           children: [
-            Expanded(
-              child: AppSelectField(
-                value: selectedFilter,
-                hint: "Trạng thái",
-                items: ['Tất cả', 'Đang diễn ra', 'Sắp diễn ra', 'Đã kết thúc'],
-                onChanged: (v) => setState(() => selectedFilter = v),
-              ),
+            // 🔎 SEARCH FIELD
+            AppSearchField(
+              hint: "Tìm kiếm cuộc thi...",
+              onChanged: (value) {
+                setState(() => search = value);
+              },
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: GestureDetector(
-                onTap: _chonKhoangNgay,
-                child: Container(
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: selectedDateRange == null
-                          ? const Color(0xFFE5E7EB)
-                          : const Color(0xFF2563EB),
-                      width: 1.4,
-                    ),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      const FaIcon(
-                        FontAwesomeIcons.calendarDays,
-                        size: 14,
-                        color: Color(0xFF6B7280),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          selectedDateRange == null
-                              ? "Khoảng ngày"
-                              : "${_formatDate(selectedDateRange!.start)} - ${_formatDate(selectedDateRange!.end)}",
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF1F2937),
-                          ),
-                        ),
-                      ),
+
+            const SizedBox(height: 14),
+
+            Row(
+              children: [
+                // 📌 Lọc trạng thái cuộc thi
+                Expanded(
+                  child: AppSelectField(
+                    value: selectedFilter,
+                    hint: "Trạng thái",
+                    items: const [
+                      'Tất cả',
+                      'Đang diễn ra',
+                      'Sắp diễn ra',
+                      'Đã kết thúc',
                     ],
+                    onChanged: (v) => setState(() => selectedFilter = v),
                   ),
                 ),
-              ),
+                const SizedBox(width: 12),
+
+                // 📅 Lọc theo khoảng ngày
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _chonKhoangNgay,
+                    child: Container(
+                      height: 52,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: selectedDateRange == null
+                              ? const Color(0xFFE5E7EB)
+                              : const Color(0xFF2563EB),
+                          width: 1.4,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const FaIcon(
+                            FontAwesomeIcons.calendarDays,
+                            size: 14,
+                            color: Color(0xFF6B7280),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              selectedDateRange == null
+                                  ? "Khoảng ngày"
+                                  : "${_formatDate(selectedDateRange!.start)} - ${_formatDate(selectedDateRange!.end)}",
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1F2937),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

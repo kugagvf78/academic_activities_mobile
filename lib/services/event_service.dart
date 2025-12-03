@@ -43,8 +43,8 @@ class EventService {
 
   Future<Map<String, dynamic>> registerCompetition({
     required String macuocthi,
-    required String loaiDangKy, 
-    String? madoithi,         
+    required String loaiDangKy,
+    String? madoithi,
   }) async {
     try {
       final Response res = await _api.dio.post(
@@ -62,18 +62,21 @@ class EventService {
     }
   }
 
+  /// ==============================
+  /// 🔥 ĐĂNG KÝ HỖ TRỢ
+  /// ==============================
   Future<Map<String, dynamic>> registerSupport({
     required String macuocthi,
-    required String loaiHoTro, 
-    required int hoatDongId,  
+    required String mahoatdong,
+    required String masinhvien,
   }) async {
     try {
       final Response res = await _api.dio.post(
         "/events/support",
         data: {
           "macuocthi": macuocthi,
-          "loaihotro": loaiHoTro,
-          "mahoatdong": hoatDongId,
+          "mahoatdong": mahoatdong,
+          "masinhvien": masinhvien,
         },
       );
 
@@ -83,22 +86,40 @@ class EventService {
     }
   }
 
-  Future<Map<String, dynamic>> registerCheer({
-    required String macuocthi,
-    required int hoatDongId, 
+  /// ==============================
+  /// 🔥 ĐĂNG KÝ CỔ VŨ (API thật)
+  /// ==============================
+  Future registerCheer({
+    required String mahoatdong,
+    required String masinhvien,
   }) async {
     try {
       final Response res = await _api.dio.post(
         "/events/cheer",
         data: {
-          "macuocthi": macuocthi,
-          "mahoatdong": hoatDongId,
+          "mahoatdong": mahoatdong, // gửi string
+          "masinhvien": masinhvien,
         },
+      );
+      return res.data;
+    } on DioException catch (e) {
+      throw Exception(e.response?.data["message"] ?? "Lỗi đăng ký cổ vũ");
+    }
+  }
+
+  Future<Map<String, dynamic>> submitRegistration({
+    required String slug,
+    required Map<String, dynamic> data,
+  }) async {
+    try {
+      final Response res = await _api.dio.post(
+        "/events/$slug/register",
+        data: data,
       );
 
       return res.data;
     } on DioException catch (e) {
-      throw Exception(e.response?.data["message"] ?? "Lỗi đăng ký cổ vũ");
+      throw Exception(e.response?.data["message"] ?? "Lỗi đăng ký dự thi");
     }
   }
 }

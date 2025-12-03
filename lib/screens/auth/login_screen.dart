@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:academic_activities_mobile/cores/widgets/input.dart';
 import 'package:academic_activities_mobile/cores/widgets/password_input.dart';
-import 'package:academic_activities_mobile/screens/home.dart';
 import 'package:academic_activities_mobile/screens/navigation.dart';
 import 'package:academic_activities_mobile/services/auth_service.dart';
 import 'package:dio/dio.dart';
@@ -19,9 +18,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  String role = "SinhVien";
   bool remember = false;
-  bool showPassword = false;
 
   final TextEditingController username = TextEditingController();
   final TextEditingController password = TextEditingController();
@@ -38,7 +35,6 @@ class _LoginScreenState extends State<LoginScreen> {
             end: Alignment.bottomRight,
           ),
         ),
-
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
@@ -57,14 +53,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ],
               ),
-
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   _buildHeader(),
-                  const SizedBox(height: 20),
-                  _buildRoleTabs(),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 28),
                   _buildForm(),
                 ],
               ),
@@ -82,7 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
         SizedBox(
           width: 70,
           height: 70,
-          child: Image.asset("assets/images/logo.jpg", width: 30, height: 30),
+          child: Image.asset("assets/images/logo.jpg"),
         ),
         const SizedBox(height: 12),
         const Text(
@@ -93,67 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
             color: Colors.black87,
           ),
         ),
-        const SizedBox(height: 4),
-        // const Text(
-        //   "Quản lý cuộc thi học thuật khoa Công nghệ Thông tin trường Đại Học Công Thương TP.HCM",
-        //   style: TextStyle(color: Colors.grey, fontSize: 14),
-        //   textAlign: TextAlign.center,
-        // ),
       ],
-    );
-  }
-
-  // 🔷 Tabs Vai trò
-  Widget _buildRoleTabs() {
-    return Row(
-      children: [
-        Expanded(child: _roleTab("SinhVien", FontAwesomeIcons.userGraduate)),
-        const SizedBox(width: 12),
-        Expanded(child: _roleTab("GiangVien", FontAwesomeIcons.chalkboardUser)),
-      ],
-    );
-  }
-
-  Widget _roleTab(String value, IconData icon) {
-    final bool active = role == value;
-
-    return GestureDetector(
-      onTap: () => setState(() => role = value),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: active ? Colors.blue : Colors.grey.shade300,
-            width: 2,
-          ),
-          color: active ? Colors.blue.shade50 : Colors.white,
-          boxShadow: active
-              ? [
-                  BoxShadow(
-                    color: Colors.blue.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : [],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            FaIcon(icon, size: 16, color: active ? Colors.blue : Colors.grey),
-            const SizedBox(width: 8),
-            Text(
-              value == "SinhVien" ? "Sinh viên" : "Giảng viên",
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: active ? Colors.blue.shade700 : Colors.grey.shade600,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -238,39 +171,35 @@ class _LoginScreenState extends State<LoginScreen> {
           if (mounted) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(
-                builder: (_) => const Navigation(), // ⬅️ MÀN ĐÍCH
-              ),
+              MaterialPageRoute(builder: (_) => const Navigation()),
             );
           }
         } catch (e) {
-  if (e is DioException) {
-    dynamic raw = e.response?.data;
+          if (e is DioException) {
+            dynamic raw = e.response?.data;
 
-    String message = "Có lỗi xảy ra, vui lòng thử lại!";
+            String message = "Có lỗi xảy ra, vui lòng thử lại!";
 
-    if (raw is Map) {
-      if (raw.containsKey("message")) {
-        message = raw["message"];
-      } else if (raw.containsKey("error")) {
-        message = raw["error"];  // 👈 Thêm dòng này
-      }
-    }
-    else if (raw is String) {
-      try {
-        final parsed = jsonDecode(raw);
-        if (parsed is Map && parsed.containsKey("error")) {
-          message = parsed["error"]; // 👈 và ở đây
+            if (raw is Map) {
+              if (raw.containsKey("message")) {
+                message = raw["message"];
+              } else if (raw.containsKey("error")) {
+                message = raw["error"];
+              }
+            } else if (raw is String) {
+              try {
+                final parsed = jsonDecode(raw);
+                if (parsed is Map && parsed.containsKey("error")) {
+                  message = parsed["error"];
+                }
+              } catch (_) {}
+            }
+
+            ErrorToast.show(context, message);
+          } else {
+            ErrorToast.show(context, 'Có lỗi xảy ra');
+          }
         }
-      } catch (_) {}
-    }
-
-    ErrorToast.show(context, message);
-  } else {
-    ErrorToast.show(context, 'Có lỗi xảy ra');
-  }
-}
-
       },
       child: Container(
         width: double.infinity,
@@ -302,11 +231,10 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  // 🔻 Toast lỗi custom
   void _showError(String message) {
-    // Rung nhẹ
     HapticFeedback.mediumImpact();
 
-    // Tạo overlay để hiện toast từ giữa màn hình
     final overlay = Overlay.of(context);
     late OverlayEntry overlayEntry;
 
@@ -319,14 +247,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
     overlay.insert(overlayEntry);
 
-    // Tự mất sau 3 giây
     Future.delayed(const Duration(seconds: 3), () {
       if (overlayEntry.mounted) overlayEntry.remove();
     });
   }
 }
 
-// Toast Widget đẹp, nhỏ gọn, bay lên rồi mờ dần
+// Widget toast
 class _ToastWidget extends StatefulWidget {
   final String message;
   final VoidCallback onDismiss;
@@ -363,7 +290,6 @@ class _ToastWidgetState extends State<_ToastWidget>
 
     _controller.forward();
 
-    // Bắt đầu mờ dần sau 2 giây
     Future.delayed(const Duration(seconds: 1), () {
       if (mounted) {
         _controller.reverse().then((_) => widget.onDismiss());
@@ -389,7 +315,6 @@ class _ToastWidgetState extends State<_ToastWidget>
             child: Container(
               constraints: const BoxConstraints(maxWidth: 320),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-              margin: const EdgeInsets.symmetric(horizontal: 32),
               decoration: BoxDecoration(
                 color: Colors.red,
                 borderRadius: BorderRadius.circular(20),
