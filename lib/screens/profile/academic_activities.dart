@@ -6,6 +6,8 @@ import 'package:academic_activities_mobile/services/profile_service.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import '../../cores/widgets/colorful_loader.dart';
+
 class AcademicActivitiesScreen extends StatefulWidget {
   const AcademicActivitiesScreen({super.key});
 
@@ -86,20 +88,25 @@ class _AcademicActivitiesScreenState extends State<AcademicActivitiesScreen> {
         ),
       ),
       body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : errorMessage != null
-              ? _buildErrorView()
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 8),
-                      _buildStatCard(),
-                      const SizedBox(height: 16),
-                      _buildActivitiesList(),
-                    ],
-                  ),
-                ),
+    ? ColorfulLoader()   // Đây là chỗ thay duy nhất!
+    : errorMessage != null
+        ? _buildErrorView()
+        : RefreshIndicator(      // Thêm luôn pull-to-refresh cho đẹp
+            onRefresh: _loadData,  // Cho phép kéo xuống reload
+            color: Colors.orange,
+            backgroundColor: Colors.blue,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  const SizedBox(height: 8),
+                  _buildStatCard(),
+                  const SizedBox(height: 16),
+                  _buildActivitiesList(),
+                ],
+              ),
+            ),
+          ),
     );
   }
 

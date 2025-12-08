@@ -1,3 +1,4 @@
+import 'package:academic_activities_mobile/cores/widgets/colorful_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -90,8 +91,8 @@ class _KetQuaDetailScreenState extends State<KetQuaDetailScreen> {
   @override
   Widget build(BuildContext context) {
     if (loading || cuocThi == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        body: ColorfulLoader(),
       );
     }
 

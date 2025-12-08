@@ -3,6 +3,8 @@ import 'package:academic_activities_mobile/services/news_service.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import '../../cores/widgets/colorful_loader.dart';
+
 class NewsDetailScreen extends StatefulWidget {
   final String slug; // 🔥 chỉ nhận slug
 
@@ -49,7 +51,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: loading
-          ? const Center(child: CircularProgressIndicator())
+          ? ColorfulLoader()
           : news == null
           ? const Center(child: Text("Không tìm thấy bài viết"))
           : CustomScrollView(

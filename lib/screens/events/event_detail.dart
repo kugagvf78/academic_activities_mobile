@@ -10,6 +10,8 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 
+import '../../cores/widgets/colorful_loader.dart';
+
 class EventDetailScreen extends StatefulWidget {
   final String id; // nhận id cuộc thi
 
@@ -57,7 +59,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     if (loading) {
       return Scaffold(
         backgroundColor: Colors.white,
-        body: const Center(child: CircularProgressIndicator()),
+        body: ColorfulLoader(),
       );
     }
 

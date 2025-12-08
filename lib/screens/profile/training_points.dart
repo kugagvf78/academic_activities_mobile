@@ -4,17 +4,104 @@ import 'package:academic_activities_mobile/screens/navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-class TrainingPointsScreen extends StatelessWidget {
+class TrainingPointsScreen extends StatefulWidget {
   final DiemRenLuyen? diemRenLuyen;
 
   const TrainingPointsScreen({super.key, required this.diemRenLuyen});
 
   @override
+  State<TrainingPointsScreen> createState() => _TrainingPointsScreenState();
+}
+
+class _TrainingPointsScreenState extends State<TrainingPointsScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _headerController;
+  late AnimationController _cardsController;
+  late Animation<double> _headerFade;
+  late Animation<Offset> _headerSlide;
+  late List<Animation<double>> _cardFades;
+  late List<Animation<Offset>> _cardSlides;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Header animation
+    _headerController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _headerFade = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _headerController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+      ),
+    );
+
+    _headerSlide = Tween<Offset>(
+      begin: const Offset(0, -0.5),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _headerController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    // Cards animation
+    _cardsController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+
+    final details = widget.diemRenLuyen?.details ?? [];
+    final cardCount = details.length + 1; // +1 for overview cards
+
+    _cardFades = List.generate(cardCount, (index) {
+      final start = index * 0.1;
+      final end = start + 0.4;
+      return Tween<double>(begin: 0.0, end: 1.0).animate(
+        CurvedAnimation(
+          parent: _cardsController,
+          curve: Interval(start.clamp(0.0, 0.6), end.clamp(0.1, 1.0),
+              curve: Curves.easeOut),
+        ),
+      );
+    });
+
+    _cardSlides = List.generate(cardCount, (index) {
+      final start = index * 0.1;
+      final end = start + 0.4;
+      return Tween<Offset>(
+        begin: const Offset(0, 0.3),
+        end: Offset.zero,
+      ).animate(
+        CurvedAnimation(
+          parent: _cardsController,
+          curve: Interval(start.clamp(0.0, 0.6), end.clamp(0.1, 1.0),
+              curve: Curves.easeOutCubic),
+        ),
+      );
+    });
+
+    _headerController.forward();
+    _cardsController.forward();
+  }
+
+  @override
+  void dispose() {
+    _headerController.dispose();
+    _cardsController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final base = diemRenLuyen?.base ?? 0;
-    final bonus = diemRenLuyen?.bonus ?? 0;
-    final total = diemRenLuyen?.finalScore ?? 0;
-    final details = diemRenLuyen?.details ?? [];
+    final base = widget.diemRenLuyen?.base ?? 0;
+    final bonus = widget.diemRenLuyen?.bonus ?? 0;
+    final total = widget.diemRenLuyen?.finalScore ?? 0;
+    final details = widget.diemRenLuyen?.details ?? [];
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -28,69 +115,121 @@ class TrainingPointsScreen extends StatelessWidget {
           },
         ),
       ),
-
       body: details.isEmpty
           ? _buildEmptyState()
           : SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _header(),
+                  FadeTransition(
+                    opacity: _headerFade,
+                    child: SlideTransition(
+                      position: _headerSlide,
+                      child: _header(),
+                    ),
+                  ),
                   const SizedBox(height: 16),
-                  _buildOverview(base, bonus, total),
+                  _buildAnimatedCard(
+                    index: 0,
+                    child: _buildOverview(base, bonus, total),
+                  ),
                   const SizedBox(height: 24),
-                  const Text(
-                    "Chi tiết điểm cộng",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF111827),
+                  FadeTransition(
+                    opacity: _headerFade,
+                    child: const Text(
+                      "Chi tiết điểm cộng",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF111827),
+                        letterSpacing: -0.3,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
-                  ...details.map((d) => _buildDetailCard(d)).toList(),
+                  ...details.asMap().entries.map((entry) {
+                    return _buildAnimatedCard(
+                      index: entry.key + 1,
+                      child: _buildDetailCard(entry.value),
+                    );
+                  }).toList(),
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
     );
   }
 
-  /// ==========================
-  /// EMPTY STATE
-  /// ==========================
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          FaIcon(
-            FontAwesomeIcons.chartLine,
-            size: 64,
-            color: Colors.grey.shade300,
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            "Chưa có điểm rèn luyện",
-            style: TextStyle(
-              fontSize: 18,
-              color: Color(0xFF6B7280),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            "Tham gia hoạt động để tích lũy điểm!",
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade400),
-          ),
-        ],
+  Widget _buildAnimatedCard({required int index, required Widget child}) {
+    if (index >= _cardFades.length) return child;
+
+    return FadeTransition(
+      opacity: _cardFades[index],
+      child: SlideTransition(
+        position: _cardSlides[index],
+        child: child,
       ),
     );
   }
 
-  /// ==========================
-  /// HEADER + EXPORT BUTTON
-  /// ==========================
+  Widget _buildEmptyState() {
+    return Center(
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.0, end: 1.0),
+        duration: const Duration(milliseconds: 800),
+        curve: Curves.easeOutCubic,
+        builder: (context, value, child) {
+          return Opacity(
+            opacity: value,
+            child: Transform.scale(
+              scale: 0.8 + (value * 0.2),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: FaIcon(
+                        FontAwesomeIcons.chartLine,
+                        size: 48,
+                        color: Colors.grey.shade400,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    "Chưa có điểm rèn luyện",
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: Color(0xFF6B7280),
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Tham gia hoạt động để tích lũy điểm!",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade400,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _header() {
     return Container(
       padding: const EdgeInsets.only(bottom: 12),
@@ -106,38 +245,53 @@ class TrainingPointsScreen extends StatelessWidget {
               fontSize: 22,
               fontWeight: FontWeight.bold,
               color: Color(0xFF1F2937),
+              letterSpacing: -0.5,
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-            decoration: BoxDecoration(
-              color: const Color(0xFF2563EB),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                // Export PDF logic
+              },
               borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF2563EB).withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Row(
-              children: [
-                FaIcon(
-                  FontAwesomeIcons.download,
-                  size: 13,
-                  color: Colors.white,
-                ),
-                SizedBox(width: 7),
-                Text(
-                  "Xuất PDF",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF2563EB).withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-              ],
+                child: const Row(
+                  children: [
+                    FaIcon(
+                      FontAwesomeIcons.download,
+                      size: 13,
+                      color: Colors.white,
+                    ),
+                    SizedBox(width: 7),
+                    Text(
+                      "Xuất PDF",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
@@ -145,9 +299,6 @@ class TrainingPointsScreen extends StatelessWidget {
     );
   }
 
-  /// ==========================
-  /// 3 CARD: BASE – BONUS – FINAL
-  /// ==========================
   Widget _buildOverview(int base, int bonus, int total) {
     return Row(
       children: [
@@ -182,156 +333,208 @@ class TrainingPointsScreen extends StatelessWidget {
   }
 
   Widget _box(String label, String value, Color c1, Color c2) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [c1, c2],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: c1.withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeOut,
+      builder: (context, scale, child) {
+        return Transform.scale(
+          scale: 0.9 + (scale * 0.1),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [c1, c2],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: c1.withOpacity(0.3),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 30,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 28,
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  /// ==========================
-  /// DETAIL CARD - ENHANCED
-  /// ==========================
   Widget _buildDetailCard(DiemRLDetail d) {
     final color = getColorByType(d.loai);
     final icon = getIconByType(d.loai);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(1.4), // bo viền màu
+      margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: color, // viền ngoài
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: color.withOpacity(0.2),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Column(
-          children: [
-            // ---------------- HEADER ----------------
-            Container(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ICON
-                  Container(
-                    width: 45,
-                    height: 45,
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(12),
+      child: Column(
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [color, color.withOpacity(0.7)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    child: Center(child: FaIcon(icon, color: color, size: 20)),
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 14),
-
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          d.title,
-                          style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF111827),
+                  child: Center(
+                    child: FaIcon(icon, color: Colors.white, size: 22),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        d.title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF111827),
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 7),
+                      Row(
+                        children: [
+                          FaIcon(
+                            FontAwesomeIcons.calendar,
+                            size: 11,
+                            color: Colors.grey.shade500,
                           ),
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            FaIcon(
-                              FontAwesomeIcons.calendar,
-                              size: 12,
-                              color: Colors.grey.shade500,
+                          const SizedBox(width: 6),
+                          Text(
+                            d.dateFormatted,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
                             ),
-                            const SizedBox(width: 6),
-                            Text(
-                              d.dateFormatted,
+                          ),
+                          const SizedBox(width: 10),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: color.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: color.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              d.loai,
                               style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey.shade600,
+                                fontSize: 11,
+                                color: color,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                color: color.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                d.loai,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: color,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-
-                  Text(
-                    "+${d.diem.toStringAsFixed(2)}",
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF10B981), Color(0xFF059669)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF10B981).withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    "+${d.diem.toStringAsFixed(1)}",
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF16A34A),
+                      color: Colors.white,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
+          ),
 
-            // ---------------- DETAIL SECTION ----------------
-            _buildDetailSection(d, color),
-          ],
-        ),
+          // Detail Section
+          _buildDetailSection(d, color),
+        ],
       ),
     );
   }
@@ -339,68 +542,75 @@ class TrainingPointsScreen extends StatelessWidget {
   Widget _buildDetailSection(DiemRLDetail d, Color color) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
-        border: Border(top: BorderSide(color: Colors.grey.shade200)),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(15),
-          bottomRight: Radius.circular(15),
+        color: color.withOpacity(0.03),
+        border: Border(
+          top: BorderSide(color: color.withOpacity(0.1), width: 1),
+        ),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(16),
+          bottomRight: Radius.circular(16),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Hoạt động
           _detailLine(
             icon: FontAwesomeIcons.tag,
             label: "Hoạt động",
             value: d.title,
+            color: color,
           ),
-
-          // Loại
           _detailLine(
             icon: FontAwesomeIcons.list,
             label: "Loại",
             value: d.loai,
+            color: color,
           ),
-
-          // Thời gian
           _detailLine(
             icon: FontAwesomeIcons.clock,
             label: "Thời gian",
             value: d.dateFormatted,
+            color: color,
           ),
-
-          // Địa điểm (nếu có)
           if (d.chiTiet?["dia_diem"] != null)
             _detailLine(
               icon: FontAwesomeIcons.mapMarkerAlt,
               label: "Địa điểm",
               value: d.chiTiet?["dia_diem"] ?? "",
+              color: color,
             ),
-
-          // Mô tả
           const SizedBox(height: 10),
-          Divider(color: Colors.grey.shade300),
-          const SizedBox(height: 6),
-
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              FaIcon(
-                FontAwesomeIcons.infoCircle,
-                size: 12,
-                color: Colors.grey.shade400,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  d.mota,
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FaIcon(
+                  FontAwesomeIcons.infoCircle,
+                  size: 13,
+                  color: color.withOpacity(0.7),
                 ),
-              ),
-            ],
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    d.mota,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade700,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -411,17 +621,36 @@ class TrainingPointsScreen extends StatelessWidget {
     required IconData icon,
     required String label,
     required String value,
+    required Color color,
   }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          FaIcon(icon, size: 13, color: Colors.grey.shade700),
-          const SizedBox(width: 8),
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Center(
+              child: FaIcon(icon, size: 11, color: color),
+            ),
+          ),
+          const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              "$label: $value",
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+            child: RichText(
+              text: TextSpan(
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                children: [
+                  TextSpan(
+                    text: "$label: ",
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  TextSpan(text: value),
+                ],
+              ),
             ),
           ),
         ],
@@ -434,19 +663,15 @@ class TrainingPointsScreen extends StatelessWidget {
       case "đạt giải":
       case "dat giai":
         return FontAwesomeIcons.award;
-
       case "hỗ trợ":
       case "ho tro":
         return FontAwesomeIcons.handsHelping;
-
       case "dự thi":
       case "du thi":
         return FontAwesomeIcons.userGraduate;
-
       case "tham dự":
       case "tham du":
         return FontAwesomeIcons.calendarCheck;
-
       default:
         return FontAwesomeIcons.circleInfo;
     }
@@ -456,55 +681,16 @@ class TrainingPointsScreen extends StatelessWidget {
     switch (loai.toLowerCase()) {
       case "đạt giải":
       case "dat giai":
-        return const Color(0xFFF59E0B); // purple
-
+        return const Color(0xFFF59E0B);
       case "hỗ trợ":
       case "ho tro":
-        return const Color(0xFF7C3AED); // violet
-
+        return const Color(0xFF7C3AED);
       case "dự thi":
       case "du thi":
-        return const Color(0xFF16A34A); // green
-
+        return const Color(0xFF16A34A);
       case "tham dự":
       case "tham du":
-        return const Color(0xFF2563EB); // blue
-
-      default:
-        return Colors.grey.shade600;
-    }
-  }
-
-  /// ==========================
-  /// SUPPORTING FUNCTIONS
-  /// ==========================
-  IconData _mapIcon(String? icon) {
-    switch (icon) {
-      case "fa-user-graduate":
-        return FontAwesomeIcons.userGraduate;
-      case "fa-hands-helping":
-        return FontAwesomeIcons.handsHelping;
-      case "fa-users":
-        return FontAwesomeIcons.users;
-      default:
-        return FontAwesomeIcons.circleInfo;
-    }
-  }
-
-  Color _mapColor(String? c) {
-    switch (c) {
-      case "blue":
         return const Color(0xFF2563EB);
-      case "green":
-        return const Color(0xFF16A34A);
-      case "purple":
-        return const Color(0xFFA855F7);
-      case "yellow":
-        return const Color(0xFFEAB308);
-      case "orange":
-        return const Color(0xFFF97316);
-      case "red":
-        return const Color(0xFFDC2626);
       default:
         return Colors.grey.shade600;
     }

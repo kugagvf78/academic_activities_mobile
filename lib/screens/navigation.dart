@@ -23,7 +23,7 @@ class _NavigationState extends State<Navigation> {
 
   final List<Widget> _screens = const [
     HomeScreen(),
-    NewsScreen(), 
+    NewsScreen(),
     CuocThiScreen(),
     KetQuaScreen(),
     ProfileScreen(),
@@ -43,7 +43,7 @@ class _NavigationState extends State<Navigation> {
 
   void _onTap(int index) {
     if (_currentIndex != index) {
-      HapticFeedback.selectionClick();
+      HapticFeedback.lightImpact();
       setState(() => _currentIndex = index);
     }
   }
@@ -52,18 +52,30 @@ class _NavigationState extends State<Navigation> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      body: _screens[_currentIndex],
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
+      ),
       bottomNavigationBar: _buildBottomNav(),
     );
   }
 
   Widget _buildBottomNav() {
-    return SizedBox(
+    return Container(
       height: 80,
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // Nền có lỗ lõm
+          // Nền có lỗ lõm với hiệu ứng đẹp hơn
           Positioned.fill(child: CustomPaint(painter: NavBarPainter())),
 
           // Menu items
@@ -82,9 +94,7 @@ class _NavigationState extends State<Navigation> {
                   iconActive: "assets/icons/notification_active.png",
                   label: "Tin tức",
                 ),
-
-                Expanded(child: SizedBox()), // khoảng trống ở giữa
-
+                const Expanded(child: SizedBox()),
                 _buildNavItem(
                   index: 3,
                   icon: "assets/icons/award.png",
@@ -101,37 +111,57 @@ class _NavigationState extends State<Navigation> {
             ),
           ),
 
-          // Nút giữa
+          // Nút giữa với animation đẹp mắt
           Positioned(
-            top: -20,
+            top: -25,
             left: 0,
             right: 0,
             child: Center(
               child: GestureDetector(
                 onTap: () => _onTap(2),
-                child: Container(
-                  width: 64,
-                  height: 64,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                  width: 68,
+                  height: 68,
+                  transform: Matrix4.identity()
+                    ..scale(_currentIndex == 2 ? 1.08 : 1.0),
+                  transformAlignment: Alignment.center,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF0088FF), Color(0xFF0066CC)],
+                    gradient: LinearGradient(
+                      colors: _currentIndex == 2
+                          ? [const Color(0xFF0099FF), const Color(0xFF0055CC)]
+                          : [const Color(0xFF0088FF), const Color(0xFF0066CC)],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.blue.withOpacity(0.3),
-                        blurRadius: 12,
-                        offset: Offset(0, 4),
+                        color: const Color(0xFF0088FF).withOpacity(0.4),
+                        blurRadius: 20,
+                        spreadRadius: 2,
+                        offset: const Offset(0, 5),
+                      ),
+                      BoxShadow(
+                        color: Colors.white.withOpacity(0.8),
+                        blurRadius: 8,
+                        spreadRadius: -2,
+                        offset: const Offset(0, -2),
                       ),
                     ],
                   ),
                   child: Center(
-                    child: Image.asset(
-                      "assets/icons/event.png",
-                      width: 30,
-                      height: 30,
+                    child: AnimatedScale(
+                      scale: _currentIndex == 2 ? 1.15 : 1.0,
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOut,
+                      child: Image.asset(
+                        "assets/icons/event.png",
+                        width: 32,
+                        height: 32,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
@@ -155,22 +185,50 @@ class _NavigationState extends State<Navigation> {
       child: GestureDetector(
         onTap: () => _onTap(index),
         behavior: HitTestBehavior.opaque,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(isSelected ? iconActive : icon, width: 28, height: 28),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected
-                    ? const Color(0xFF0088FF)
-                    : Colors.grey.shade600,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedScale(
+                scale: isSelected ? 1.1 : 1.0,
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: isSelected
+                      ? const EdgeInsets.all(8)
+                      : EdgeInsets.zero,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isSelected
+                        ? const Color(0xFF0088FF).withOpacity(0.1)
+                        : Colors.transparent,
+                  ),
+                  child: Image.asset(
+                    isSelected ? iconActive : icon,
+                    width: 26,
+                    height: 26,
+                  ),
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 4),
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                style: TextStyle(
+                  fontSize: isSelected ? 13.5 : 12.5,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  color: isSelected
+                      ? const Color(0xFF0088FF)
+                      : Colors.grey.shade600,
+                  letterSpacing: 0.2,
+                ),
+                child: Text(label),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -184,34 +242,40 @@ class NavBarPainter extends CustomPainter {
       ..color = Colors.white
       ..style = PaintingStyle.fill;
 
+    final shadowPaint = Paint()
+      ..color = Colors.black.withOpacity(0.03)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+
     final borderPaint = Paint()
-      ..color = const Color.fromARGB(255, 210, 213, 218) // viền xám nhẹ
+      ..color = const Color(0xFFE8EAED)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
+      ..strokeWidth = 1.5;
 
     final path = Path();
-
-    const notchRadius = 38.0;
+    const notchRadius = 40.0;
     final center = size.width / 2;
 
     path.moveTo(0, 0);
-    path.lineTo(center - notchRadius - 20, 0);
+    path.lineTo(center - notchRadius - 22, 0);
 
-    // Vòng lõm lên
-    path.quadraticBezierTo(
-      center - notchRadius, 0,
-      center - notchRadius + 10, 20,
+    // Đường cong mượt mà hơn
+    path.cubicTo(
+      center - notchRadius - 10, 0,
+      center - notchRadius - 5, 8,
+      center - notchRadius + 8, 22,
     );
 
+    // Vòng cung cho nút giữa
     path.arcToPoint(
-      Offset(center + notchRadius - 10, 20),
-      radius: const Radius.circular(50),
+      Offset(center + notchRadius - 8, 22),
+      radius: const Radius.circular(52),
       clockwise: false,
     );
 
-    path.quadraticBezierTo(
-      center + notchRadius, 0,
-      center + notchRadius + 20, 0,
+    path.cubicTo(
+      center + notchRadius + 5, 8,
+      center + notchRadius + 10, 0,
+      center + notchRadius + 22, 0,
     );
 
     path.lineTo(size.width, 0);
@@ -219,10 +283,13 @@ class NavBarPainter extends CustomPainter {
     path.lineTo(0, size.height);
     path.close();
 
+    // Vẽ bóng mờ
+    canvas.drawPath(path, shadowPaint);
+
     // Đổ nền
     canvas.drawPath(path, bgPaint);
 
-    // Viền xám nhẹ
+    // Viền thanh lịch
     canvas.drawPath(path, borderPaint);
   }
 
