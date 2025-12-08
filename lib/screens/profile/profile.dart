@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../cores/widgets/colorful_loader.dart';
 import 'personal_info.dart';
 import 'academic_activities.dart';
 import 'training_points.dart';
@@ -88,9 +89,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: Color(0xFFF1F5F9),
-        body: Center(child: CircularProgressIndicator()),
+        body: ColorfulLoader(),
       );
     }
 

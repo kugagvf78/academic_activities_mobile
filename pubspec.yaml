@@ -25,6 +25,7 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
   flutter_svg: ^2.0.7
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
@@ -41,3 +42,13 @@ flutter:
     - assets/images/patterns/
     - assets/images/avatars/
     - assets/icons/
+
+
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/logo.png"        # Giữ nguyên nếu file tên là logo.png
+  min_sdk_android: 21
+  adaptive_icon_background: "#003366"       # Thêm dòng này (rất quan trọng!)
+  adaptive_icon_foreground: "assets/icon/logo.png"  # Thêm dòng này (bắt buộc Android 8+)
