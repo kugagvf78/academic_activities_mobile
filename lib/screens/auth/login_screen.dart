@@ -8,7 +8,6 @@ import 'package:academic_activities_mobile/screens/navigation.dart';
 import 'package:academic_activities_mobile/services/auth_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,9 +18,17 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool remember = false;
+  bool isLoading = false;
 
   final TextEditingController username = TextEditingController();
   final TextEditingController password = TextEditingController();
+
+  @override
+  void dispose() {
+    username.dispose();
+    password.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,7 +75,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // 🔷 Header Icon + Title
   Widget _buildHeader() {
     return Column(
       children: [
@@ -90,16 +96,15 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // 🔷 Form inputs
   Widget _buildForm() {
     return Column(
       children: [
-        // Username
         LabeledInput(
-          label: "Tên đăng nhập",
-          hint: "Nhập MSSV",
-          icon: Icons.person,
+          label: "Mã sinh viên",
+          hint: "Nhập mã sinh viên (VD: 2024000001)",
+          icon: Icons.badge_outlined,
           controller: username,
+          enabled: !isLoading, // ← THÊM LẠI
         ),
 
         const SizedBox(height: 16),
@@ -107,15 +112,13 @@ class _LoginScreenState extends State<LoginScreen> {
         PasswordInput(
           label: "Mật khẩu",
           hint: "Nhập mật khẩu",
-          onChanged: (value) {
-            print(value);
-          },
+          onChanged: (value) {},
           controller: password,
+          enabled: !isLoading, // ← THÊM LẠI
         ),
 
         const SizedBox(height: 12),
 
-        // Remember + Forgot
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -123,15 +126,14 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 Checkbox(
                   value: remember,
-                  onChanged: (v) => setState(() => remember = v ?? false),
+                  onChanged: isLoading ? null : (v) => setState(() => remember = v ?? false),
                   activeColor: Colors.blue,
                 ),
                 const Text("Ghi nhớ đăng nhập", style: TextStyle(fontSize: 13)),
               ],
             ),
-
             TextButton(
-              onPressed: () {},
+              onPressed: isLoading ? null : () {},
               child: const Text(
                 "Quên mật khẩu?",
                 style: TextStyle(
@@ -145,7 +147,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
         const SizedBox(height: 12),
 
-        // 🔵 Login Button
         _loginButton(),
 
         const SizedBox(height: 14),
@@ -155,83 +156,125 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _loginButton() {
     return GestureDetector(
-      onTap: () async {
-        if (username.text.isEmpty || password.text.isEmpty) {
-          return _showError("Vui lòng nhập đầy đủ thông tin");
-        }
-
-        final auth = AuthService();
-
-        try {
-          final authData = await auth.login(username.text, password.text);
-
-          SharedPreferences prefs = await SharedPreferences.getInstance();
-          await prefs.setString("access_token", authData.accessToken);
-
-          if (mounted) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const Navigation()),
-            );
-          }
-        } catch (e) {
-          if (e is DioException) {
-            dynamic raw = e.response?.data;
-
-            String message = "Có lỗi xảy ra, vui lòng thử lại!";
-
-            if (raw is Map) {
-              if (raw.containsKey("message")) {
-                message = raw["message"];
-              } else if (raw.containsKey("error")) {
-                message = raw["error"];
-              }
-            } else if (raw is String) {
-              try {
-                final parsed = jsonDecode(raw);
-                if (parsed is Map && parsed.containsKey("error")) {
-                  message = parsed["error"];
-                }
-              } catch (_) {}
-            }
-
-            ErrorToast.show(context, message);
-          } else {
-            ErrorToast.show(context, 'Có lỗi xảy ra');
-          }
-        }
-      },
+      onTap: isLoading ? null : _handleLogin,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          gradient: const LinearGradient(
-            colors: [Color(0xFF2563EB), Color(0xFF06B6D4)],
+          gradient: LinearGradient(
+            colors: isLoading 
+              ? [Colors.grey.shade400, Colors.grey.shade500]
+              : [const Color(0xFF2563EB), const Color(0xFF06B6D4)],
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.blue.withOpacity(0.3),
+              color: (isLoading ? Colors.grey : Colors.blue).withOpacity(0.3),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: const Center(
-          child: Text(
-            "Đăng nhập",
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 16,
-            ),
-          ),
+        child: Center(
+          child: isLoading
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : const Text(
+                "Đăng nhập",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
         ),
       ),
     );
   }
 
-  // 🔻 Toast lỗi custom
+  Future<void> _handleLogin() async {
+    // Validate
+    if (username.text.trim().isEmpty || password.text.trim().isEmpty) {
+      _showError("Vui lòng nhập đầy đủ thông tin");
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      final auth = AuthService();
+      final authData = await auth.login(
+        username.text.trim(), 
+        password.text.trim()
+      );
+
+      // Lưu token nếu remember me
+      if (remember) {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString("access_token", authData.accessToken);
+        await prefs.setBool("remember_me", true);
+      }
+
+      if (mounted) {
+        // Hiển thị thông báo thành công
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Xin chào, ${authData.user.hoten ?? authData.user.tendangnhap}!'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+
+        // Chuyển màn hình
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const Navigation()),
+        );
+      }
+    } catch (e) {
+      setState(() => isLoading = false);
+
+      String message = "Có lỗi xảy ra, vui lòng thử lại!";
+
+      if (e is DioException) {
+        if (e.response?.statusCode == 401) {
+          message = "Sai mã sinh viên hoặc mật khẩu";
+        } else if (e.response?.statusCode == 403) {
+          message = "Tài khoản của bạn đã bị khóa";
+        } else {
+          dynamic raw = e.response?.data;
+
+          if (raw is Map) {
+            if (raw.containsKey("message")) {
+              message = raw["message"];
+            } else if (raw.containsKey("error")) {
+              message = raw["error"];
+            }
+          } else if (raw is String) {
+            try {
+              final parsed = jsonDecode(raw);
+              if (parsed is Map && parsed.containsKey("error")) {
+                message = parsed["error"];
+              }
+            } catch (_) {}
+          }
+        }
+      } else {
+        message = 'Không thể kết nối đến server';
+      }
+
+      if (mounted) {
+        ErrorToast.show(context, message);
+      }
+    }
+  }
+
   void _showError(String message) {
     HapticFeedback.mediumImpact();
 
@@ -253,7 +296,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-// Widget toast
 class _ToastWidget extends StatefulWidget {
   final String message;
   final VoidCallback onDismiss;
@@ -290,7 +332,7 @@ class _ToastWidgetState extends State<_ToastWidget>
 
     _controller.forward();
 
-    Future.delayed(const Duration(seconds: 1), () {
+    Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
         _controller.reverse().then((_) => widget.onDismiss());
       }

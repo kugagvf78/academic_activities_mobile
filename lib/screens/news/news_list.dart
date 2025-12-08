@@ -165,7 +165,7 @@ class _NewsScreenState extends State<NewsScreen> with TickerProviderStateMixin {
                 AnimatedOpacity(
                   duration: Duration(milliseconds: 200),
                   opacity: isCollapsed ? 0 : 1,
-                  child: _buildHeroContent(),
+                  child: _buildHeroContent(context),
                 ),
               ],
             ),
@@ -175,56 +175,98 @@ class _NewsScreenState extends State<NewsScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildHeroContent() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 90, 24, 40),
-      child: Column(
-        children: [
-          Container(
-            width: 58,
-            height: 58,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(50),
-              color: Colors.white.withOpacity(.2),
-              border: Border.all(color: Colors.white.withOpacity(.3)),
-            ),
-            child: const Center(
-              child: FaIcon(
-                FontAwesomeIcons.newspaper,
-                color: Colors.white,
-                size: 28,
+  Widget _buildHeroContent(BuildContext context) {
+  // Lấy chiều cao an toàn (không tính thanh trạng thái và thanh điều hướng)
+  final double availableHeight = MediaQuery.of(context).size.height -
+      MediaQuery.of(context).padding.top -
+      MediaQuery.of(context).padding.bottom;
+
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      return SingleChildScrollView( // Cho phép cuộn nếu vẫn quá cao (rất hiếm)
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: constraints.maxHeight,
+          ),
+          child: IntrinsicHeight(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                24,
+                MediaQuery.of(context).padding.top + 40, // Đẩy xuống dưới notch/status bar
+                24,
+                40,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Icon tròn
+                  Container(
+                    width: 58,
+                    height: 58,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(50),
+                      color: Colors.white.withOpacity(.2),
+                      border: Border.all(color: Colors.white.withOpacity(.3)),
+                    ),
+                    child: const Center(
+                      child: FaIcon(
+                        FontAwesomeIcons.newspaper,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Tiêu đề
+                  Text(
+                    "Tin tức & Thông báo",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      height: 1.2,
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Mô tả
+                  Text(
+                    "Cập nhật các hoạt động, sự kiện, thông báo mới nhất của khoa CNTT.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 15,
+                      height: 1.5,
+                    ),
+                  ),
+
+                  const SizedBox(height: 32), // Khoảng cách lớn hơn một chút để đẹp
+
+                  // Thống kê
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildStat("${stats['total'] ?? 0}", "Tin tức"),
+                      const SizedBox(width: 40),
+                      _buildStat("${stats['this_month'] ?? 0}", "Tháng này"),
+                    ],
+                  ),
+
+                  // Đẩy hết nội dung lên trên nếu còn thừa không gian (tránh bị dính bottom)
+                  const Spacer(),
+                ],
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          const Text(
-            "Tin tức & Thông báo",
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            "Cập nhật các hoạt động, sự kiện, thông báo mới nhất của khoa CNTT.",
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white70, fontSize: 15, height: 1.4),
-          ),
-          const SizedBox(height: 26),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildStat("${stats['total'] ?? 0}", "Tin tức"),
-              const SizedBox(width: 28),
-              _buildStat("${stats['this_month'] ?? 0}", "Tháng này"),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
+        ),
+      );
+    },
+  );
+}
   Widget _buildStat(String number, String label) {
     return Column(
       children: [

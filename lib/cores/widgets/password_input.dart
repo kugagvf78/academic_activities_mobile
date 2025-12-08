@@ -4,14 +4,18 @@ class PasswordInput extends StatefulWidget {
   final String label;
   final String hint;
   final Function(String)? onChanged;
-  final TextEditingController? controller; // ⬅️ NEW: controller
+  final bool required;
+  final TextEditingController? controller;
+  final bool enabled; // ← THÊM PARAMETER NÀY
 
   const PasswordInput({
     super.key,
     required this.label,
     required this.hint,
     this.onChanged,
-    this.controller, // ⬅️ NEW
+    this.required = true,
+    this.controller,
+    this.enabled = true, // ← DEFAULT = TRUE
   });
 
   @override
@@ -19,14 +23,20 @@ class PasswordInput extends StatefulWidget {
 }
 
 class _PasswordInputState extends State<PasswordInput> {
-  bool _obscure = true;
+  bool _obscureText = true;
+
+  void _toggleVisibility() {
+    setState(() {
+      _obscureText = !_obscureText;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // LABEL
+        // LABEL + OPTIONAL *
         Row(
           children: [
             Text(
@@ -37,42 +47,51 @@ class _PasswordInputState extends State<PasswordInput> {
                 fontSize: 16,
               ),
             ),
-            const SizedBox(width: 4),
-            const Text(
-              "*",
-              style: TextStyle(
-                color: Colors.red,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+
+            if (widget.required) ...[
+              const SizedBox(width: 4),
+              const Text(
+                "*",
+                style: TextStyle(
+                  color: Colors.red,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
+            ],
           ],
         ),
 
         const SizedBox(height: 6),
 
+        // PASSWORD INPUT
         TextField(
-          controller: widget.controller, // ⬅️ NEW
-          obscureText: _obscure,
+          controller: widget.controller,
           onChanged: widget.onChanged,
-          style: const TextStyle(
+          obscureText: _obscureText,
+          enabled: widget.enabled, // ← SỬ DỤNG ENABLED
+          style: TextStyle(
             fontSize: 16,
-            color: Color(0xFF111827),
+            color: widget.enabled ? const Color(0xFF111827) : Colors.grey.shade500, // ← ĐỔI MÀU
             fontWeight: FontWeight.w500,
           ),
           decoration: InputDecoration(
             hintText: widget.hint,
             hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
 
-            prefixIcon: Icon(Icons.lock, color: Colors.grey.shade500, size: 20),
+            prefixIcon: Icon(
+              Icons.lock_outline,
+              size: 20,
+              color: widget.enabled ? Colors.grey.shade500 : Colors.grey.shade400, // ← ĐỔI MÀU ICON
+            ),
 
             suffixIcon: IconButton(
-              onPressed: () => setState(() => _obscure = !_obscure),
               icon: Icon(
-                _obscure ? Icons.visibility_off : Icons.visibility,
-                color: Colors.grey.shade500,
+                _obscureText ? Icons.visibility_off : Icons.visibility,
+                color: widget.enabled ? Colors.grey.shade500 : Colors.grey.shade400, // ← ĐỔI MÀU ICON
                 size: 20,
               ),
+              onPressed: widget.enabled ? _toggleVisibility : null, // ← DISABLE NÚT KHI DISABLED
             ),
 
             contentPadding: const EdgeInsets.symmetric(
@@ -80,11 +99,14 @@ class _PasswordInputState extends State<PasswordInput> {
               vertical: 14,
             ),
 
+            // ← THÊM STYLE CHO DISABLED
+            filled: !widget.enabled,
+            fillColor: !widget.enabled ? Colors.grey.shade100 : null,
+
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
             ),
-
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(
@@ -92,7 +114,10 @@ class _PasswordInputState extends State<PasswordInput> {
                 width: 1.4,
               ),
             ),
-
+            disabledBorder: OutlineInputBorder( // ← THÊM BORDER CHO DISABLED
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+            ),
             isDense: true,
           ),
         ),

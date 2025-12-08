@@ -6,7 +6,8 @@ class LabeledInput extends StatelessWidget {
   final IconData? icon;
   final Function(String)? onChanged;
   final bool required;
-  final TextEditingController? controller;   // ⬅️ NEW: ADD CONTROLLER
+  final TextEditingController? controller;
+  final bool enabled; // ← THÊM PARAMETER NÀY
 
   const LabeledInput({
     super.key,
@@ -15,7 +16,8 @@ class LabeledInput extends StatelessWidget {
     this.icon,
     this.onChanged,
     this.required = true,
-    this.controller,   // ⬅️ ALLOW PASSING CONTROLLER
+    this.controller,
+    this.enabled = true, // ← DEFAULT = TRUE
   });
 
   @override
@@ -53,11 +55,12 @@ class LabeledInput extends StatelessWidget {
 
         // INPUT
         TextField(
-          controller: controller, // ⬅️ USE THE CONTROLLER HERE
+          controller: controller,
           onChanged: onChanged,
-          style: const TextStyle(
+          enabled: enabled, // ← SỬ DỤNG ENABLED
+          style: TextStyle(
             fontSize: 16,
-            color: Color(0xFF111827),
+            color: enabled ? const Color(0xFF111827) : Colors.grey.shade500, // ← ĐỔI MÀU KHI DISABLED
             fontWeight: FontWeight.w500,
           ),
           decoration: InputDecoration(
@@ -65,13 +68,21 @@ class LabeledInput extends StatelessWidget {
             hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
 
             prefixIcon: icon != null
-                ? Icon(icon, size: 20, color: Colors.grey.shade500)
+                ? Icon(
+                    icon, 
+                    size: 20, 
+                    color: enabled ? Colors.grey.shade500 : Colors.grey.shade400, // ← ĐỔI MÀU ICON
+                  )
                 : null,
 
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 14,
             ),
+
+            // ← THÊM STYLE CHO DISABLED
+            filled: !enabled,
+            fillColor: !enabled ? Colors.grey.shade100 : null,
 
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -83,6 +94,10 @@ class LabeledInput extends StatelessWidget {
                 color: Color(0xFF2563EB),
                 width: 1.4,
               ),
+            ),
+            disabledBorder: OutlineInputBorder( // ← THÊM BORDER CHO DISABLED
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
             ),
             isDense: true,
           ),

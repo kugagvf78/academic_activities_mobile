@@ -18,7 +18,7 @@ class ProfileService {
   final ApiService _api = ApiService();
 
   /// ============================
-  /// GET PROFILE
+  /// GET PROFILE - SỬ DỤNG API /profile
   /// ============================
   Future<Map<String, dynamic>> getProfile() async {
     try {
@@ -27,7 +27,8 @@ class ProfileService {
       print("Token hiện tại: ${_api.dio.options.headers['Authorization']}");
 
       print("=== RAW RESPONSE ===");
-      print(res.data);
+      print("Status Code: ${res.statusCode}");
+      print("Full Response: ${res.data}");
 
       if (res.statusCode != 200) {
         return {
@@ -41,37 +42,74 @@ class ProfileService {
         return {"success": false, "message": "Data null từ server"};
       }
 
-      return {
-        "success": true,
-        "data": {
-          "user": NguoiDung.fromJson(data["user"]),
-          "profile": data["profile"] != null
-              ? SinhVien.fromJson(data["profile"])
-              : null,
+      // Parse từng phần và bắt lỗi riêng
+      try {
+        print("=== PARSING USER ===");
+        final user = NguoiDung.fromJson(data["user"]);
+        print("✅ User parsed OK");
 
-          "lop": data["profile"]?["lop"] != null
-              ? Lop.fromJson(data["profile"]["lop"])
-              : null,
+        print("=== PARSING PROFILE ===");
+        final profile = data["profile"] != null
+            ? SinhVien.fromJson(data["profile"])
+            : null;
+        print("✅ Profile parsed OK");
 
-          "activities": data["activities"] ?? [],
+        print("=== PARSING LOP ===");
+        final lop = data["profile"]?["lop"] != null
+            ? Lop.fromJson(data["profile"]["lop"])
+            : null;
+        print("✅ Lop parsed OK");
 
-          "certificates": List<DatGiaiApi>.from(
-            (data["certificates"] ?? []).map((e) => DatGiaiApi.fromJson(e)),
-          ),
+        print("=== PARSING CERTIFICATES ===");
+        final certificates = <DatGiaiApi>[];
+        final rawCerts = data["certificates"] ?? [];
+        
+        for (var item in rawCerts) {
+          try {
+            certificates.add(DatGiaiApi.fromJson(item));
+          } catch (e) {
+            print("⚠️ Skip certificate: $e");
+          }
+        }
+        print("✅ Certificates parsed OK: ${certificates.length} items");
 
-          "registrations": _parseRegistrations(data["registrations"] ?? []),
+        print("=== PARSING REGISTRATIONS ===");
+        final registrations = _parseRegistrations(data["registrations"] ?? []);
+        print("✅ Registrations parsed OK: ${registrations.length} items");
 
-          "competitionRegistrations": _parseCompetition(
-            data["competitionRegistrations"] ?? [],
-          ),
+        print("=== PARSING COMPETITION REGISTRATIONS ===");
+        final competitionRegistrations = _parseCompetition(
+          data["competitionRegistrations"] ?? [],
+        );
+        print("✅ Competition registrations parsed OK: ${competitionRegistrations.length} items");
 
-          "diemRenLuyen": data["diemRenLuyen"] != null
-              ? DiemRenLuyen.fromJson(data["diemRenLuyen"])
-              : null,
-        },
-      };
+        print("=== PARSING DIEM REN LUYEN ===");
+        final diemRenLuyen = data["diemRenLuyen"] != null
+            ? DiemRenLuyen.fromJson(data["diemRenLuyen"])
+            : null;
+        print("✅ Diem ren luyen parsed OK");
+
+        return {
+          "success": true,
+          "data": {
+            "user": user,
+            "profile": profile,
+            "lop": lop,
+            "activities": data["activities"] ?? [],
+            "certificates": certificates,
+            "registrations": registrations,
+            "competitionRegistrations": competitionRegistrations,
+            "diemRenLuyen": diemRenLuyen,
+          },
+        };
+        
+      } catch (parseError) {
+        print("❌ PARSE ERROR: $parseError");
+        return {"success": false, "message": "Lỗi parse data: $parseError"};
+      }
+
     } catch (e) {
-      print("PROFILE ERROR: $e");
+      print("❌ PROFILE ERROR: $e");
       return {"success": false, "message": e.toString()};
     }
   }
@@ -84,20 +122,37 @@ class ProfileService {
   }
 
   List<DangKyHoatDongFull> _parseRegistrations(List raw) {
-    return raw.map((e) => DangKyHoatDongFull.fromJson(e)).toList();
+    final results = <DangKyHoatDongFull>[];
+    for (var item in raw) {
+      try {
+        results.add(DangKyHoatDongFull.fromJson(item));
+      } catch (e) {
+        print("⚠️ Skip registration: $e");
+      }
+    }
+    return results;
   }
 
   /// ============================
-  /// PARSE ĐĂNG KÝ CUỘC THI
+  /// PARSE ĐĂNG KÝ CUỘC THI - AN TOÀN
   /// ============================
   List<dynamic> _parseCompetition(List raw) {
     List<dynamic> results = [];
 
     for (final item in raw) {
-      if (item["loaidangky"] == "CaNhan") {
-        results.add(DangKyCaNhan.fromJson(item));
-      } else {
-        results.add(DangKyDoiThi.fromJson(item));
+      try {
+        final loaiDangKy = item["loaidangky"]?.toString();
+        
+        if (loaiDangKy == "CaNhan") {
+          results.add(DangKyCaNhan.fromJson(item));
+        } else if (loaiDangKy == "DoiNhom") {
+          results.add(DangKyDoiThi.fromJson(item));
+        } else {
+          print("⚠️ Unknown loaidangky: $loaiDangKy");
+        }
+      } catch (e) {
+        print("⚠️ Skip competition item: $e");
+        print("   Item: $item");
       }
     }
 
@@ -105,7 +160,7 @@ class ProfileService {
   }
 
   /// ============================
-  /// UPDATE AVATAR
+  /// UPDATE AVATAR - SỬ DỤNG API /profile/avatar
   /// ============================
   Future<Map<String, dynamic>> updateAvatar(File file) async {
     try {
@@ -124,11 +179,11 @@ class ProfileService {
   }
 
   /// ============================
-  /// UPDATE INFO
+  /// UPDATE INFO - SỬ DỤNG API /profile/info
   /// ============================
   Future<Map<String, dynamic>> updateInfo(Map<String, dynamic> data) async {
     try {
-      final res = await _api.dio.put("/profile/info", data: data);
+      final res = await _api.put("/profile/info", data);
       return res.data;
     } catch (e) {
       return {"success": false, "message": e.toString()};
@@ -140,7 +195,7 @@ class ProfileService {
   /// ============================
   Future<Map<String, dynamic>> cancelHoatDong(String id) async {
     try {
-      final res = await _api.dio.delete("/profile/activities/$id");
+      final res = await _api.delete("/profile/activities/$id");
       return res.data;
     } catch (e) {
       return {"success": false, "message": e.toString()};
@@ -152,7 +207,7 @@ class ProfileService {
   /// ============================
   Future<Map<String, dynamic>> cancelCompetition(String id) async {
     try {
-      final res = await _api.dio.delete("/profile/competitions/$id");
+      final res = await _api.delete("/profile/competitions/$id");
       return res.data;
     } catch (e) {
       return {"success": false, "message": e.toString()};
