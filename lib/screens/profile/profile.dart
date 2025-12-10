@@ -1,4 +1,6 @@
-import 'package:academic_activities_mobile/models/DangKyHoatDong.dart';
+import 'package:academic_activities_mobile/cores/widgets/error_toast.dart';
+import 'package:academic_activities_mobile/cores/widgets/success_toast.dart';
+import 'package:academic_activities_mobile/main.dart';
 import 'package:academic_activities_mobile/models/DangKyHoatDongFull.dart';
 import 'package:academic_activities_mobile/models/DatGiaiApi.dart';
 import 'package:academic_activities_mobile/models/DiemRenLuyen.dart';
@@ -6,13 +8,16 @@ import 'package:academic_activities_mobile/models/Lop.dart';
 import 'package:academic_activities_mobile/models/SinhVien.dart';
 import 'package:academic_activities_mobile/models/NguoiDung.dart';
 import 'package:academic_activities_mobile/screens/auth/login_screen.dart';
+import 'package:academic_activities_mobile/services/api_service.dart';
 import 'package:academic_activities_mobile/services/profile_service.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import '../../cores/widgets/colorful_loader.dart';
 import 'personal_info.dart';
+import 'package:dio/dio.dart';
 import 'academic_activities.dart';
 import 'training_points.dart';
 import 'my_registrations.dart';
@@ -27,10 +32,12 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
   final ProfileService _profileService = ProfileService();
-
+  bool _isUploadingAvatar = false;
   bool _isLoading = true;
+  final ApiService _api = ApiService();
+  File? _image;
   String? _errorMessage;
 
   NguoiDung? _user;
@@ -42,6 +49,148 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _loadProfile();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Không cho bấm ngoài để tắt
+      builder: (context) => Center(
+        child: Container(
+          margin: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.12),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Icon logout đẹp lung linh
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Colors.redAccent, Colors.orangeAccent],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(40),
+                ),
+                child: const Icon(
+                  Icons.logout_rounded,
+                  size: 40,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Tiêu đề
+              const Text(
+                "Đăng xuất tài khoản",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Nội dung
+              Text(
+                "Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng?",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.grey.shade600,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // Nút hành động
+              Row(
+                children: [
+                  // Nút "Hủy"
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey.shade100,
+                        foregroundColor: Colors.grey.shade700,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(color: Colors.grey.shade300),
+                        ),
+                      ),
+                      child: const Text(
+                        "Hủy",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // Nút "Đăng xuất"
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.remove("access_token");
+
+                        if (!context.mounted) return;
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LoginScreen(),
+                          ),
+                          (_) => false,
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text(
+                        "Đăng xuất",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _loadProfile() async {
@@ -83,6 +232,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _errorMessage = e.toString();
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> pickImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+
+    if (picked != null) {
+      setState(() => _image = File(picked.path));
+      uploadAvatar();
+    }
+  }
+
+  Future<void> uploadAvatar() async {
+    if (_image == null) {
+      print("No image selected");
+      return;
+    }
+
+    FormData formData = FormData.fromMap({
+      "avatar": await MultipartFile.fromFile(_image!.path),
+    });
+
+    try {
+      setState(() {
+        _isUploadingAvatar = true;
+      });
+
+      final res = await _api.dio.post(
+        "/profile/avatar",
+        data: formData,
+        options: Options(headers: {"Content-Type": "multipart/form-data"}),
+      );
+
+      if (res.data['success'] == true) {
+        String newAvatarPath = res.data['avatar_url'];
+
+        setState(() {
+          _user = _user?.copyWith(anhdaidien: newAvatarPath);
+          _isUploadingAvatar = false;
+        });
+
+        _loadProfile();
+
+        SuccessToast.show(context, 'Cập nhật avatar thành công!');
+      } else {
+        setState(() {
+          _isUploadingAvatar = false;
+        });
+
+        ErrorToast.show(context, 'Lỗi: ${res.data['message']}');
+      }
+    } catch (e) {
+      setState(() {
+        _isUploadingAvatar = false;
+      });
+
+      ErrorToast.show(context, 'Lỗi upload: $e');
     }
   }
 
@@ -188,34 +395,88 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 20),
 
                   // Avatar
-                  Container(
-                    width: 120,
-                    height: 120,
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF60A5FA), Color(0xFFFBBF24)],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF2563EB).withOpacity(0.4),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 3),
-                        image: const DecorationImage(
-                          image: AssetImage(
-                            'assets/images/avatars/default_avt.jpg',
+                  GestureDetector(
+                    onTap: () => pickImage(),
+                    child: Stack(
+                      children: [
+                        Container(
+                          width: 120,
+                          height: 120,
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF60A5FA), Color(0xFFFBBF24)],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF2563EB).withOpacity(0.4),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
                           ),
-                          fit: BoxFit.cover,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 3),
+                              image: DecorationImage(
+                                image: _user?.anhdaidien != null
+                                    ? NetworkImage(
+                                            "https://acax-appht.136-111-164-106.nip.io/storage/${_user!.anhdaidien!}",
+                                          )
+                                          as ImageProvider
+                                    : const AssetImage(
+                                        'assets/images/avatars/default_avt.jpg',
+                                      ),
+                                fit: BoxFit.cover,
+                                onError: (exception, stackTrace) {
+                                  // ✅ XỬ LÝ LỖI KHI LOAD ẢNH
+                                  print('Error loading avatar: $exception');
+                                },
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+                        if (_isUploadingAvatar)
+                          Container(
+                            width: 120,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.black.withOpacity(0.5),
+                            ),
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                              ),
+                            ),
+                          )
+                        else
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: GestureDetector(
+                              onTap: () => pickImage(),
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 3,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.camera_alt,
+                                  size: 18,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
 
@@ -422,13 +683,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _navigateToScreen(BuildContext context, int index) {
-    Widget screen;
+  void _navigateToScreen(BuildContext context, int index) async {
+    Widget? screen;
 
     switch (index) {
-      // ==============================
-      // 0. Thông tin cá nhân
-      // ==============================
       case 0:
         screen = PersonalInfoScreen(
           user: _user!,
@@ -437,32 +695,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
         break;
 
-      // ==============================
-      // 1. Hoạt động học thuật (dashboard)
-      // ==============================
       case 1:
         screen = const AcademicActivitiesScreen();
         break;
-      // ==============================
-      // 2. Điểm rèn luyện
-      // ==============================
+
       case 2:
         screen = TrainingPointsScreen(
           diemRenLuyen: _fullData?["diemRenLuyen"] as DiemRenLuyen?,
         );
         break;
 
-      // ==============================
-      // 3. Đăng ký cuộc thi
-      // ==============================
+      // ✅ CASE 3 - XỬ LÝ RIÊNG
       case 3:
         final raw = _fullData?['competitionRegistrations'] ?? [];
-        screen = MyRegistrationsScreen(competition: raw);
-        break;
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MyRegistrationsScreen(
+              competition: raw,
+              onRefresh: _loadProfile,
+            ),
+          ),
+        );
 
-      // ==============================
-      // 4. Đăng ký hỗ trợ - cổ vũ
-      // ==============================
+        if (result == true) {
+          _loadProfile(); // ✅ RELOAD KHI TRẢ VỀ
+        }
+        return; // ✅ RETURN ĐỂ KHÔNG CHẠY CODE BÊN DƯỚI
+
       case 4:
         final raw = _fullData?['registrations'] ?? [];
 
@@ -477,23 +737,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
         screen = SupportRegistrationScreen(activities: activities);
         break;
-      // ==============================
-      // 5. Chứng nhận / đạt giải
-      // ==============================
+
       case 5:
-  final raw = _fullData?['certificates'] ?? [];
+        final raw = _fullData?['certificates'] ?? [];
 
-  final List<DatGiaiApi> certs = raw.map<DatGiaiApi>((e) {
-    if (e is DatGiaiApi) return e;
-    return DatGiaiApi.fromJson(e);
-  }).toList();
+        final List<DatGiaiApi> certs = raw.map<DatGiaiApi>((e) {
+          if (e is DatGiaiApi) return e;
+          return DatGiaiApi.fromJson(e);
+        }).toList();
 
-  screen = CertificatesScreen(certificates: certs);
-  break;
+        screen = CertificatesScreen(certificates: certs);
+        break;
 
-      // ==============================
-      // 6. Cài đặt
-      // ==============================
       case 6:
         screen = const SettingsScreen();
         break;
@@ -502,7 +757,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return;
     }
 
-    Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+    // ✅ CHỈ PUSH KHI screen != null
+    if (screen != null) {
+      final needRefresh = await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => screen!),
+      );
+    }
   }
 
   Widget _buildMenuItem({
@@ -558,14 +819,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildLogoutButton(BuildContext context) {
     return InkWell(
       onTap: () async {
-        final prefs = await SharedPreferences.getInstance();
-        prefs.remove("access_token");
-
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-          (_) => false,
-        );
+        _showLogoutDialog(context);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -604,4 +858,22 @@ class _MenuItemData {
   final Color? color;
 
   _MenuItemData(this.icon, this.title, this.color);
+}
+
+extension CopyWithNguoiDung on NguoiDung {
+  NguoiDung copyWith({String? anhdaidien}) {
+    return NguoiDung(
+      manguoidung: manguoidung,
+      tendangnhap: tendangnhap,
+      matkhau: matkhau,
+      hoten: hoten,
+      email: email,
+      sodienthoai: sodienthoai,
+      vaitro: vaitro,
+      trangthai: trangthai,
+      ngaytao: ngaytao,
+      ngaycapnhat: ngaycapnhat,
+      anhdaidien: anhdaidien ?? this.anhdaidien,
+    );
+  }
 }

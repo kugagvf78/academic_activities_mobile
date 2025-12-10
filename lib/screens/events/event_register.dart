@@ -4,14 +4,15 @@ import 'package:academic_activities_mobile/cores/widgets/error_toast.dart';
 import 'package:academic_activities_mobile/cores/widgets/info_tag.dart';
 import 'package:academic_activities_mobile/cores/widgets/success_toast.dart';
 import 'package:academic_activities_mobile/services/event_service.dart';
+import 'package:academic_activities_mobile/services/auth_service.dart'; // ✅ THÊM
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:academic_activities_mobile/cores/widgets/input.dart';
 
 class EventRegisterScreen extends StatefulWidget {
-  final String id; // slug hoặc mã cuộc thi
+  final String id;
   final String tenCuocThi;
-  final String hinhThuc; // CaNhan / DoiNhom / CaHai
+  final String hinhThuc;
 
   const EventRegisterScreen({
     super.key,
@@ -44,6 +45,40 @@ class _EventRegisterScreenState extends State<EventRegisterScreen> {
 
     if (widget.hinhThuc == "CaNhan") type = "individual";
     if (widget.hinhThuc == "DoiNhom") type = "team";
+
+    // ✅ AUTO-FILL THÔNG TIN TÀI KHOẢN
+    _loadUserInfo();
+  }
+
+  Future<void> _loadUserInfo() async {
+    try {
+      // ✅ CÁCH 1: GỌI API /auth/me (ƯU TIÊN)
+      final userInfo = await AuthService().getUserInfo();
+
+      if (userInfo != null) {
+        setState(() {
+          _nameCtrl.text = userInfo['hoten'] ?? '';
+          _mssvCtrl.text = userInfo['tendangnhap'] ?? ''; // Mã SV/GV
+          _emailCtrl.text = userInfo['email'] ?? '';
+          _phoneCtrl.text = userInfo['sodienthoai'] ?? '';
+        });
+        return;
+      }
+
+      // ✅ CÁCH 2: DECODE TOKEN (FALLBACK)
+      final tokenData = await AuthService().getUserInfoFromToken();
+
+      if (tokenData != null) {
+        setState(() {
+          _nameCtrl.text = tokenData['ho_ten'] ?? '';
+          _mssvCtrl.text = tokenData['sub'] ?? ''; // sub chứa mã SV
+          _emailCtrl.text = tokenData['email'] ?? '';
+          // Token không có phone, để trống
+        });
+      }
+    } catch (e) {
+      print('❌ Lỗi load user info: $e');
+    }
   }
 
   void addMember() {
@@ -58,76 +93,77 @@ class _EventRegisterScreenState extends State<EventRegisterScreen> {
     });
   }
 
-  // ===================================================
-  // SUBMIT FORM → GỌI API LARAVEL
-  // ===================================================
   void _submit() async {
-    if (_nameCtrl.text.isEmpty ||
-        _mssvCtrl.text.isEmpty ||
-        _emailCtrl.text.isEmpty ||
-        _phoneCtrl.text.isEmpty) {
-      ErrorToast.show(context, "Vui lòng nhập đủ thông tin bắt buộc");
+  if (_nameCtrl.text.isEmpty ||
+      _mssvCtrl.text.isEmpty ||
+      _emailCtrl.text.isEmpty ||
+      _phoneCtrl.text.isEmpty) {
+    ErrorToast.show(context, "Vui lòng nhập đủ thông tin bắt buộc");
+    return;
+  }
+
+  if (type == "team" && teamName.isEmpty) {
+    ErrorToast.show(context, "Tên đội không được để trống");
+    return;
+  }
+
+  setState(() => _loading = true);
+
+  Map<String, dynamic> body = {
+    "type": type,
+    // ✅ THAY ĐỔI TÊN FIELDS CHO KHỚP VỚI BACKEND
+    "main_name": _nameCtrl.text,              // ✅ leader_name → main_name
+    "main_student_code": _mssvCtrl.text,      // ✅ leader_student_code → main_student_code
+    "main_email": _emailCtrl.text,            // ✅ leader_email → main_email
+    "main_phone": _phoneCtrl.text,            // ✅ leader_phone → main_phone
+    "note": _noteCtrl.text,
+  };
+
+  // ✅ CHỈ THÊM team_name KHI ĐĂNG KÝ ĐỘI
+  if (type == "team") {
+    body["team_name"] = teamName;
+    
+    // ✅ QUAN TRỌNG: Backend yêu cầu members.length >= 1
+    if (members.isEmpty) {
+      ErrorToast.show(context, "Đội thi phải có ít nhất 1 thành viên ngoài trưởng đội");
+      setState(() => _loading = false);
       return;
     }
 
-    if (type == "team" && teamName.isEmpty) {
-      ErrorToast.show(context, "Tên đội không được để trống");
+    body["members"] = members
+        .map(
+          (m) => {
+            "name": m["name"],
+            "student_code": m["mssv"],
+            "email": m["email"],
+          },
+        )
+        .toList();
+  }
+
+  try {
+    final res = await EventService().submitRegistration(
+      slug: widget.id,
+      data: body,
+    );
+
+    if (res["success"] == false) {
+      ErrorToast.show(context, res["message"] ?? "Có lỗi xảy ra");
+      setState(() => _loading = false);
       return;
-    }
-
-    setState(() => _loading = true);
-
-    Map<String, dynamic> body = {
-      "type": type,
-      "team_name": teamName,
-      "main_name": _nameCtrl.text,
-      "main_student_code": _mssvCtrl.text,
-      "main_email": _emailCtrl.text,
-      "main_phone": _phoneCtrl.text,
-      "note": _noteCtrl.text,
-    };
-
-    if (type == "team") {
-      body["members"] = members
-          .map(
-            (m) => {
-              "name": m["name"],
-              "student_code": m["mssv"],
-              "email": m["email"],
-            },
-          )
-          .toList();
-    }
-
-    try {
-      final res = await EventService().submitRegistration(
-        slug: widget.id,
-        data: body,
-      );
-
-      if (res["success"] == false) {
-        ErrorToast.show(context, res["message"] ?? "Có lỗi xảy ra");
-        setState(() => _loading = false);
-        return;
-      }
-
-      // SUCCESS TOAST
-      SuccessToast.show(context, res["message"] ?? "Đăng ký thành công!");
-
-      // Close after a delay
-      Future.delayed(const Duration(milliseconds: 900), () {
-        Navigator.pop(context);
-      });
-    } catch (e) {
-      ErrorToast.show(context, e.toString().replaceFirst("Exception: ", ""));
     }
 
     setState(() => _loading = false);
-  }
+    SuccessToast.show(context, res["message"] ?? "Đăng ký thành công!");
 
-  // ===================================================
-  // UI BẮT ĐẦU
-  // ===================================================
+    Future.delayed(const Duration(milliseconds: 900), () {
+      Navigator.pop(context, true);
+    });
+  } catch (e) {
+    setState(() => _loading = false);
+    ErrorToast.show(context, e.toString().replaceFirst("Exception: ", ""));
+  }
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -252,14 +288,12 @@ class _EventRegisterScreenState extends State<EventRegisterScreen> {
                 text: "Cuộc thi này chỉ cho phép đăng ký theo đội",
               ),
 
-            if (type == "team") ...[
-              const SizedBox(height: 20),
-              LabeledInput(
-                label: "Tên đội thi *",
-                hint: "Nhập tên đội...",
-                onChanged: (v) => teamName = v,
-              ),
-            ],
+            const SizedBox(height: 20),
+            LabeledInput(
+              label: "Tên đội thi *",
+              hint: "Nhập tên đội...",
+              onChanged: (v) => teamName = v,
+            ),
 
             const SizedBox(height: 24),
 
@@ -275,24 +309,33 @@ class _EventRegisterScreenState extends State<EventRegisterScreen> {
             ),
             const SizedBox(height: 12),
 
+            // ✅ HỌ VÀ TÊN - KHÔNG CHO SỬA
             LabeledInput(
               label: "Họ và tên",
               hint: "Nhập họ và tên",
               controller: _nameCtrl,
+              enabled: false,
             ),
             const SizedBox(height: 16),
+
+            // ✅ MSSV - KHÔNG CHO SỬA
             LabeledInput(
               label: "Mã số sinh viên",
               hint: "Nhập mã số sinh viên",
               controller: _mssvCtrl,
+              enabled: false, // ✅ DISABLED
             ),
             const SizedBox(height: 16),
+
+            // ✅ EMAIL - CHO SỬA
             LabeledInput(
               label: "Email",
               hint: "Nhập email",
               controller: _emailCtrl,
             ),
             const SizedBox(height: 16),
+
+            // ✅ SĐT - CHO SỬA
             LabeledInput(
               label: "Số điện thoại",
               hint: "Nhập số điện thoại",
@@ -464,7 +507,6 @@ class _EventRegisterScreenState extends State<EventRegisterScreen> {
   }
 }
 
-// MULTILINE INPUT
 Widget _inputMultiline({required TextEditingController controller}) {
   return TextField(
     controller: controller,

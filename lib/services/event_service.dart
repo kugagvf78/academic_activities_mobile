@@ -28,16 +28,29 @@ class EventService {
   /// ==============================
   /// 🔥 LẤY CHI TIẾT CUỘC THI
   /// ==============================
-  Future<Map<String, dynamic>> getEventDetail(String id) async {
+  Future<Map<String, dynamic>> getEventDetail(String slug) async {
     try {
-      final Response res = await _api.dio.get("/events/$id");
-      if (res.data["success"] == true) {
-        return res.data["data"] as Map<String, dynamic>;
-      }
+      final Response res = await _api.dio.get("/events/$slug");
 
-      throw Exception(res.data["message"] ?? "Không thể lấy chi tiết");
+      if (res.data["success"] == true) {
+        var data = res.data["data"];
+
+        if (data is List) {
+          data = data.isNotEmpty ? data[0] : {};
+        }
+
+        if (data is Map<String, dynamic>) {
+          return data;
+        } else {
+          throw Exception("Dữ liệu không đúng định dạng");
+        }
+      } else {
+        throw Exception(
+          res.data["message"] ?? "Không thể lấy chi tiết sự kiện",
+        );
+      }
     } on DioException catch (e) {
-      throw Exception(e.response?.data["message"] ?? "Lỗi server");
+      throw Exception("Lỗi tải chi tiết sự kiện: ${e.message}");
     }
   }
 
@@ -112,8 +125,9 @@ class EventService {
     required Map<String, dynamic> data,
   }) async {
     try {
+      // ✅ PHẢI GỌI ENDPOINT CÓ {slug}
       final Response res = await _api.dio.post(
-        "/events/$slug/register",
+        "/events/$slug/register", // ✅ ĐÚNG - có slug
         data: data,
       );
 

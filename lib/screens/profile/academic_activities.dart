@@ -1,12 +1,12 @@
 import 'package:academic_activities_mobile/cores/widgets/appbar.dart';
-import 'package:academic_activities_mobile/models/DangKyHoatDong.dart';
-import 'package:academic_activities_mobile/models/HoatDongNgan.dart';
+import 'package:academic_activities_mobile/screens/events/event_detail.dart';
 import 'package:academic_activities_mobile/screens/navigation.dart';
 import 'package:academic_activities_mobile/services/profile_service.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-
+import 'package:intl/intl.dart';
 import '../../cores/widgets/colorful_loader.dart';
+import 'package:academic_activities_mobile/models/HoatDongHocThuat.dart';
 
 class AcademicActivitiesScreen extends StatefulWidget {
   const AcademicActivitiesScreen({super.key});
@@ -19,7 +19,7 @@ class AcademicActivitiesScreen extends StatefulWidget {
 class _AcademicActivitiesScreenState extends State<AcademicActivitiesScreen> {
   final ProfileService _profileService = ProfileService();
 
-  List<HoatDongNgan> activities = [];
+  List<HoatDongHocThuat> activities = [];
   int soThamGia = 0;
   int soDatGiai = 0;
   int tongDiem = 0;
@@ -40,15 +40,16 @@ class _AcademicActivitiesScreenState extends State<AcademicActivitiesScreen> {
       if (res["success"] == true) {
         final data = res["data"];
 
-        final List<dynamic> rawActivities = data["activities"] ?? [];
+        // In dữ liệu hoạt động
+        print("Activities data: ${data['activities']}");
+
+        final List<HoatDongHocThuat> rawActivities = data["activities"] ?? [];
         final rawCertificates = data["certificates"] ?? [];
 
         final diemRL = data["diemRenLuyen"]?.finalScore ?? 0;
 
         setState(() {
-          activities = rawActivities
-    .map<HoatDongNgan>((e) => HoatDongNgan.fromJson(e))
-    .toList();
+          activities = rawActivities;
 
           soThamGia = activities.length;
           soDatGiai = rawCertificates.length;
@@ -88,25 +89,26 @@ class _AcademicActivitiesScreenState extends State<AcademicActivitiesScreen> {
         ),
       ),
       body: loading
-    ? ColorfulLoader()   // Đây là chỗ thay duy nhất!
-    : errorMessage != null
-        ? _buildErrorView()
-        : RefreshIndicator(      // Thêm luôn pull-to-refresh cho đẹp
-            onRefresh: _loadData,  // Cho phép kéo xuống reload
-            color: Colors.orange,
-            backgroundColor: Colors.blue,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  const SizedBox(height: 8),
-                  _buildStatCard(),
-                  const SizedBox(height: 16),
-                  _buildActivitiesList(),
-                ],
+          ? ColorfulLoader() // Đây là chỗ thay duy nhất!
+          : errorMessage != null
+          ? _buildErrorView()
+          : RefreshIndicator(
+              // Thêm luôn pull-to-refresh cho đẹp
+              onRefresh: _loadData, // Cho phép kéo xuống reload
+              color: Colors.orange,
+              backgroundColor: Colors.blue,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 8),
+                    _buildStatCard(),
+                    const SizedBox(height: 16),
+                    _buildActivitiesList(),
+                  ],
+                ),
               ),
             ),
-          ),
     );
   }
 
@@ -190,10 +192,7 @@ class _AcademicActivitiesScreenState extends State<AcademicActivitiesScreen> {
         const SizedBox(height: 4),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.white70,
-          ),
+          style: const TextStyle(fontSize: 12, color: Colors.white70),
         ),
       ],
     );
@@ -232,161 +231,269 @@ class _AcademicActivitiesScreenState extends State<AcademicActivitiesScreen> {
         ),
         const SizedBox(height: 12),
 
-        ...activities.map((a) => _buildActivityCard(a)).toList(),
+        // Sử dụng HoatDongHocThuat để hiển thị dữ liệu
+        ...activities
+            .map(
+              (a) => GestureDetector(
+                onTap: () {
+                  // Khi nhấn vào hoạt động, chuyển sang màn hình chi tiết
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => EventDetailScreen(
+                        id: a.id,
+                      ), // Truyền id hoạt động vào chi tiết
+                    ),
+                  );
+                },
+                child: _buildActivityCard(a),
+              ),
+            )
+            .toList(),
       ],
     );
   }
 
-  // ========== CARD ITEM ==========
-  Widget _buildActivityCard(HoatDongNgan a) {
-  final Color color = _mapColor(a.mau);
+  // ========== CARD ITEM (Redesigned to match web version) ==========
+  Widget _buildActivityCard(HoatDongHocThuat a) {
+    final Color statusColor = _mapColor(a.mau);
+    String month = DateFormat('MM').format(a.ngay);
+    String day = DateFormat('dd').format(a.ngay);
 
-  return Container(
-    margin: const EdgeInsets.only(bottom: 18),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: Colors.grey.shade200),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.05),
-          blurRadius: 12,
-          offset: const Offset(0, 6),
-        ),
-      ],
-    ),
-    child: Column(
-      children: [
-        // -----------------
-        // 🔵 TOP SECTION
-        // -----------------
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ICON
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: FaIcon(_mapIcon(a.icon), color: color, size: 22),
-                ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // ====== KHỐI NGÀY (Calendar Style) ======
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
               ),
-
-              const SizedBox(width: 14),
-
-              // TEXT
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // TITLE
-                    Text(
-                      a.ten,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF0F172A),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF1F5F9),
+                      border: Border(
+                        bottom: BorderSide(color: Color(0xFFE2E8F0)),
                       ),
                     ),
+                    child: Text(
+                      "THÁNG $month",
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF64748B),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    day,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF1E293B),
+                      height: 1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-                    // SUBTITLE
-                    if (a.phuDe != null && a.phuDe!.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
+            const SizedBox(width: 16),
+
+            // ====== NỘI DUNG CHÍNH ======
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ====== HÀNG TRÊN CÙNG: TIÊU ĐỀ + TRẠNG THÁI ======
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Tiêu đề
+                      Expanded(
                         child: Text(
-                          a.phuDe!,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade600,
+                          a.ten,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1E293B),
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      const SizedBox(width: 8),
 
-                    // ROLE (Thêm ở đây)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.person_pin_circle_rounded,
-                            color: Colors.grey.shade500,
-                            size: 14,
+                      // ====== TRẠNG THÁI ======
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: statusColor.withOpacity(0.2),
                           ),
-                          const SizedBox(width: 6),
-                          Text(
-                            a.role ?? "Không rõ",
-                            style: TextStyle(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey.shade700,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: statusColor,
+                                shape: BoxShape.circle,
+                              ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 6),
+                            Text(
+                              a.trangThai,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: statusColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // ====== PHỤ ĐỀ (nếu có) ======
+                  if (a.phuDe != null && a.phuDe!.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        a.phuDe!,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF64748B),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                  ],
-                ),
-              ),
 
-              // BADGE TRẠNG THÁI
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  a.trangThai,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.bold,
-                    color: color,
+                  const SizedBox(height: 10),
+
+                  // ====== TAGS: Vai trò + Điểm danh ======
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      // Vai trò
+                      if (a.role != null && a.role!.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEEF2FF),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: const Color(0xFFE0E7FF),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.person_rounded,
+                                size: 12,
+                                color: Color(0xFF4F46E5),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                a.role!,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF4F46E5),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      // Điểm danh
+                      if (a.attendance == "Đã điểm danh")
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0FDF4),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: const Color(0xFFDCFCE7),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(
+                                Icons.qr_code_scanner,
+                                size: 13,
+                                color: Color(0xFF15803D),
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                "Đã điểm danh",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF15803D),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-
-        // -----------------
-        // 🔻 DIVIDER
-        // -----------------
-        Container(
-          height: 1,
-          color: Colors.grey.shade100,
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-        ),
-
-        // -----------------
-        // 📅 BOTTOM SECTION
-        // -----------------
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              Icon(Icons.calendar_month_rounded,
-                  size: 16, color: Colors.grey.shade500),
-              const SizedBox(width: 8),
-              Text(
-                a.ngay,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade700,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
-}
+      ),
+    );
+  }
 
   // ========== HELPERS ==========
   Color _mapColor(String c) {
@@ -404,16 +511,4 @@ class _AcademicActivitiesScreenState extends State<AcademicActivitiesScreen> {
     }
   }
 
-  IconData _mapIcon(String icon) {
-    switch (icon) {
-      case "fa-user-graduate":
-        return FontAwesomeIcons.userGraduate;
-      case "fa-hands-helping":
-        return FontAwesomeIcons.handsHelping;
-      case "fa-users":
-        return FontAwesomeIcons.users;
-      default:
-        return FontAwesomeIcons.flag;
-    }
-  }
 }

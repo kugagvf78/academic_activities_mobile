@@ -1,4 +1,5 @@
 import 'package:academic_activities_mobile/models/TinTuc.dart';
+import 'package:academic_activities_mobile/screens/navigation.dart';
 import 'package:academic_activities_mobile/services/news_service.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -102,7 +103,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                         news!.hinhAnh!,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => Image.asset(
-                          "assets/images/no_image.png",
+                          "assets/images/news_no_image.jpg",
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -151,8 +152,11 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
 
       actions: [
         IconButton(
-          icon: const Icon(Icons.share_rounded, color: Colors.white),
-          onPressed: () {},
+          icon: const Icon(Icons.home_rounded, color: Colors.white),
+          onPressed: () {
+            Navigator.popUntil(context, (route) => route.isFirst);
+            Navigation.changeTab(0);
+          },
         ),
         const SizedBox(width: 10),
       ],

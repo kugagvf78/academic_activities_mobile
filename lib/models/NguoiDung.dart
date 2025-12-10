@@ -1,14 +1,15 @@
 class NguoiDung {
-  final String? manguoidung;
-  final String? tendangnhap;
-  final String? matkhau;
-  final String? hoten;
-  final String? email;
-  final String? sodienthoai;
-  final String? vaitro;
-  final String? trangthai;
-  final String? ngaytao;
-  final String? ngaycapnhat;
+  String? manguoidung;
+  String? tendangnhap;
+  String? matkhau;
+  String? hoten;
+  String? email;
+  String? sodienthoai;
+  String? vaitro;
+  String? trangthai;
+  String? ngaytao;
+  String? ngaycapnhat;
+  String? anhdaidien; // Removed final
 
   NguoiDung({
     this.manguoidung,
@@ -21,6 +22,7 @@ class NguoiDung {
     this.trangthai,
     this.ngaytao,
     this.ngaycapnhat,
+    this.anhdaidien,
   });
 
   factory NguoiDung.fromJson(Map<String, dynamic> json) {
@@ -35,6 +37,7 @@ class NguoiDung {
       trangthai: json['trangthai'],
       ngaytao: json['ngaytao'],
       ngaycapnhat: json['ngaycapnhat'],
+      anhdaidien: json['anhdaidien'],
     );
   }
 
@@ -50,6 +53,7 @@ class NguoiDung {
       'trangthai': trangthai,
       'ngaytao': ngaytao,
       'ngaycapnhat': ngaycapnhat,
+      'anhdaidien': anhdaidien,
     };
   }
 }

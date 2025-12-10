@@ -1,3 +1,4 @@
+import 'package:academic_activities_mobile/screens/navigation.dart';
 import 'package:flutter/material.dart';
 
 class CustomHeroSliverAppBar extends StatelessWidget {
@@ -79,9 +80,21 @@ class CustomHeroSliverAppBar extends StatelessWidget {
         ),
       ),
 
-      actions: action != null
-          ? [Padding(padding: const EdgeInsets.only(right: 12), child: action!)]
-          : null,
+      actions: [
+  IconButton(
+    icon: const Icon(Icons.home_rounded, color: Colors.white),
+    onPressed: () {
+      Navigator.popUntil(context, (route) => route.isFirst);
+      Navigation.changeTab(0);
+    },
+  ),
+  if (action != null)
+    Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: action!,
+    ),
+  const SizedBox(width: 6),
+],
     );
   }
 

@@ -19,6 +19,10 @@ dependencies:
   dio: ^5.9.0
   intl: ^0.20.2
   flutter_spinkit: ^5.2.0
+  image_picker: ^1.0.7
+  permission_handler: ^11.3.0
+  cached_network_image: ^3.3.1
+  file_picker: ^8.0.0
 
 dev_dependencies:
   flutter_test:
@@ -43,12 +47,10 @@ flutter:
     - assets/images/avatars/
     - assets/icons/
 
-
-
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/icon/logo.png"        # Giữ nguyên nếu file tên là logo.png
+  image_path: "assets/icon/logo.png" # Giữ nguyên nếu file tên là logo.png
   min_sdk_android: 21
-  adaptive_icon_background: "#003366"       # Thêm dòng này (rất quan trọng!)
-  adaptive_icon_foreground: "assets/icon/logo.png"  # Thêm dòng này (bắt buộc Android 8+)
+  adaptive_icon_background: "#003366" # Thêm dòng này (rất quan trọng!)
+  adaptive_icon_foreground: "assets/icon/logo.png" # Thêm dòng này (bắt buộc Android 8+)

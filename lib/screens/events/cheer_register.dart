@@ -2,13 +2,14 @@ import 'package:academic_activities_mobile/cores/widgets/button.dart';
 import 'package:academic_activities_mobile/cores/widgets/custom_sliver_appbar.dart';
 import 'package:academic_activities_mobile/cores/widgets/error_toast.dart';
 import 'package:academic_activities_mobile/cores/widgets/success_toast.dart';
+import 'package:academic_activities_mobile/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:academic_activities_mobile/cores/widgets/input.dart';
 import '../../services/event_service.dart';
 
 class CheerRegisterScreen extends StatefulWidget {
-  final String slug; // 🔥 slug chuẩn để gọi API
+  final String slug;
   final String tenCuocThi;
   final List<Map<String, dynamic>> hoatDongs;
 
@@ -26,53 +27,86 @@ class CheerRegisterScreen extends StatefulWidget {
 class _CheerRegisterScreenState extends State<CheerRegisterScreen> {
   String? selectedHoatDong;
 
-  String name = "";
-  String mssv = "";
-  String email = "";
-  String phone = "";
+  final _nameCtrl = TextEditingController();
+  final _mssvCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserInfo();
+  }
+
+  // ✅ AUTO-FILL THÔNG TIN USER
+  Future<void> _loadUserInfo() async {
+    try {
+      final userInfo = await AuthService().getUserInfo();
+      
+      if (userInfo != null) {
+        setState(() {
+          _nameCtrl.text = userInfo['hoten'] ?? '';
+          _mssvCtrl.text = userInfo['tendangnhap'] ?? '';
+          _emailCtrl.text = userInfo['email'] ?? '';
+          _phoneCtrl.text = userInfo['sodienthoai'] ?? '';
+        });
+        return;
+      }
+      
+      final tokenData = await AuthService().getUserInfoFromToken();
+      
+      if (tokenData != null) {
+        setState(() {
+          _nameCtrl.text = tokenData['ho_ten'] ?? '';
+          _mssvCtrl.text = tokenData['sub'] ?? '';
+          _emailCtrl.text = tokenData['email'] ?? '';
+        });
+      }
+    } catch (e) {
+      print('❌ Lỗi load user info: $e');
+    }
+  }
 
   void _submitCheer() async {
-  if (selectedHoatDong == null) {
-    ErrorToast.show(context, "Vui lòng chọn hoạt động cổ vũ");
-    return;
-  }
-
-  if (name.isEmpty || mssv.isEmpty || email.isEmpty || phone.isEmpty) {
-    ErrorToast.show(context, "Vui lòng nhập đầy đủ thông tin sinh viên");
-    return;
-  }
-
-  try {
-    final res = await EventService().registerCheer(
-      mahoatdong: selectedHoatDong!,
-      masinhvien: mssv,
-    );
-
-    if (res["success"] == false) {
-      ErrorToast.show(context, res["message"] ?? "Có lỗi xảy ra");
+    if (selectedHoatDong == null) {
+      ErrorToast.show(context, "Vui lòng chọn hoạt động cổ vũ");
       return;
     }
 
-    // 🔥 SUCCESS TOAST
-    SuccessToast.show(
-      context,
-      res["message"] ?? "Đăng ký cổ vũ thành công!",
-    );
+    if (_nameCtrl.text.isEmpty || _mssvCtrl.text.isEmpty || 
+        _emailCtrl.text.isEmpty || _phoneCtrl.text.isEmpty) {
+      ErrorToast.show(context, "Vui lòng nhập đầy đủ thông tin sinh viên");
+      return;
+    }
 
-    // 🔁 Auto close after short delay
-    Future.delayed(const Duration(milliseconds: 900), () {
-      Navigator.pop(context);
-    });
+    try {
+      final res = await EventService().registerCheer(
+        mahoatdong: selectedHoatDong!,
+        masinhvien: _mssvCtrl.text,
+      );
 
-  } catch (e) {
-    ErrorToast.show(
-      context,
-      e.toString().replaceFirst("Exception: ", ""),
-    );
+      if (res["success"] == false) {
+        ErrorToast.show(context, res["message"] ?? "Có lỗi xảy ra");
+        return;
+      }
+
+      SuccessToast.show(
+        context,
+        res["message"] ?? "Đăng ký cổ vũ thành công!",
+      );
+
+      Future.delayed(const Duration(milliseconds: 900), () {
+        Navigator.pop(context, true); // ✅ TRẢ VỀ true ĐỂ RELOAD
+      });
+
+    } catch (e) {
+      ErrorToast.show(
+        context,
+        e.toString().replaceFirst("Exception: ", ""),
+      );
+    }
   }
-}
 
-  // UI build
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -112,6 +146,7 @@ class _CheerRegisterScreenState extends State<CheerRegisterScreen> {
                 ],
               ),
             ],
+            
           ),
           SliverToBoxAdapter(child: _buildContent()),
         ],
@@ -119,7 +154,6 @@ class _CheerRegisterScreenState extends State<CheerRegisterScreen> {
     );
   }
 
-  // CONTENT FORM
   Widget _buildContent() {
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -159,31 +193,38 @@ class _CheerRegisterScreenState extends State<CheerRegisterScreen> {
             _title("Thông tin sinh viên"),
             const SizedBox(height: 16),
 
+            // ✅ HỌ TÊN - KHÔNG CHO SỬA
             LabeledInput(
               label: "Họ và tên *",
               hint: "Nguyễn Văn A",
-              onChanged: (v) => name = v,
+              controller: _nameCtrl,
+              enabled: false,
             ),
             const SizedBox(height: 16),
 
+            // ✅ MSSV - KHÔNG CHO SỬA
             LabeledInput(
               label: "Mã số sinh viên *",
               hint: "2024001234",
-              onChanged: (v) => mssv = v,
+              controller: _mssvCtrl,
+              enabled: false,
             ),
 
             const SizedBox(height: 16),
+            
+            // ✅ EMAIL - CHO SỬA
             LabeledInput(
               label: "Email sinh viên *",
               hint: "student@example.com",
-              onChanged: (v) => email = v,
+              controller: _emailCtrl,
             ),
             const SizedBox(height: 16),
 
+            // ✅ SĐT - CHO SỬA
             LabeledInput(
               label: "Số điện thoại *",
               hint: "0912345678",
-              onChanged: (v) => phone = v,
+              controller: _phoneCtrl,
             ),
 
             const SizedBox(height: 30),
@@ -196,7 +237,6 @@ class _CheerRegisterScreenState extends State<CheerRegisterScreen> {
     );
   }
 
-  // UI helpers
   Widget _title(String text) {
     return Center(
       child: Column(
@@ -349,15 +389,15 @@ class _CheerRegisterScreenState extends State<CheerRegisterScreen> {
           ),
           SizedBox(height: 12),
           Text(
-            "✔ Vui lòng có mặt đúng giờ để điểm danh.",
+            "✓ Vui lòng có mặt đúng giờ để điểm danh.",
             style: TextStyle(fontSize: 14),
           ),
           Text(
-            "✔ Không thể đăng ký sau khi hoạt động đã bắt đầu.",
+            "✓ Không thể đăng ký sau khi hoạt động đã bắt đầu.",
             style: TextStyle(fontSize: 14),
           ),
           Text(
-            "✔ Đảm bảo thông tin chính xác để nhận thông báo.",
+            "✓ Đảm bảo thông tin chính xác để nhận thông báo.",
             style: TextStyle(fontSize: 14),
           ),
         ],

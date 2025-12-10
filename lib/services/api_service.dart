@@ -11,14 +11,14 @@ class ApiService {
   ApiService._internal() {
     _dio = Dio(
       BaseOptions(
-        baseUrl: 'http://192.168.1.20:8080/api',
+        baseUrl: 'http://10.0.2.2:8000/api',
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
         headers: {
           "Accept": "application/json",
-          "Content-Type": "application/json",  // Thêm Content-Type
-        }
-      )
+          "Content-Type": "application/json", // Thêm Content-Type
+        },
+      ),
     );
 
     // Thêm interceptor để log request/response
@@ -31,12 +31,16 @@ class ApiService {
           return handler.next(options);
         },
         onResponse: (response, handler) {
-          print('🟢 RESPONSE[${response.statusCode}] => ${response.requestOptions.path}');
+          print(
+            '🟢 RESPONSE[${response.statusCode}] => ${response.requestOptions.path}',
+          );
           print('Data: ${response.data}');
           return handler.next(response);
         },
         onError: (error, handler) {
-          print('🔴 ERROR[${error.response?.statusCode}] => ${error.requestOptions.path}');
+          print(
+            '🔴 ERROR[${error.response?.statusCode}] => ${error.requestOptions.path}',
+          );
           print('Message: ${error.message}');
           print('Response: ${error.response?.data}');
           return handler.next(error);

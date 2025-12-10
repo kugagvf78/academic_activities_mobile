@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:academic_activities_mobile/cores/widgets/error_toast.dart';
+import 'package:academic_activities_mobile/cores/widgets/success_toast.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:academic_activities_mobile/cores/widgets/input.dart';
@@ -126,7 +127,9 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 Checkbox(
                   value: remember,
-                  onChanged: isLoading ? null : (v) => setState(() => remember = v ?? false),
+                  onChanged: isLoading
+                      ? null
+                      : (v) => setState(() => remember = v ?? false),
                   activeColor: Colors.blue,
                 ),
                 const Text("Ghi nhớ đăng nhập", style: TextStyle(fontSize: 13)),
@@ -163,9 +166,9 @@ class _LoginScreenState extends State<LoginScreen> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           gradient: LinearGradient(
-            colors: isLoading 
-              ? [Colors.grey.shade400, Colors.grey.shade500]
-              : [const Color(0xFF2563EB), const Color(0xFF06B6D4)],
+            colors: isLoading
+                ? [Colors.grey.shade400, Colors.grey.shade500]
+                : [const Color(0xFF2563EB), const Color(0xFF06B6D4)],
           ),
           boxShadow: [
             BoxShadow(
@@ -177,22 +180,22 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         child: Center(
           child: isLoading
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : const Text(
+                  "Đăng nhập",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                  ),
                 ),
-              )
-            : const Text(
-                "Đăng nhập",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
-                ),
-              ),
         ),
       ),
     );
@@ -210,8 +213,8 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final auth = AuthService();
       final authData = await auth.login(
-        username.text.trim(), 
-        password.text.trim()
+        username.text.trim(),
+        password.text.trim(),
       );
 
       // Lưu token nếu remember me
@@ -223,12 +226,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (mounted) {
         // Hiển thị thông báo thành công
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Xin chào, ${authData.user.hoten ?? authData.user.tendangnhap}!'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
+        SuccessToast.show(
+          context,
+          'Xin chào, ${authData.user.hoten ?? authData.user.tendangnhap}!',
         );
 
         // Chuyển màn hình

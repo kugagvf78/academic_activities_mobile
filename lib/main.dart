@@ -3,10 +3,12 @@ import 'package:academic_activities_mobile/screens/auth/login_screen.dart';
 import 'package:academic_activities_mobile/screens/navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
+final RouteObserver<ModalRoute> routeObserver = RouteObserver<ModalRoute>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  await initializeDateFormatting('vi', null);
   SharedPreferences prefs = await SharedPreferences.getInstance();
   final token = prefs.getString("access_token");
 
@@ -26,6 +28,7 @@ class AcademicApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorObservers: [routeObserver],
       debugShowCheckedModeBanner: false,
       title: 'Academic Activities',
       theme: ThemeData(

@@ -1,10 +1,10 @@
 import 'package:academic_activities_mobile/cores/widgets/button.dart';
 import 'package:academic_activities_mobile/cores/widgets/custom_sliver_appbar.dart';
 import 'package:academic_activities_mobile/cores/widgets/info_tag.dart';
-import 'package:academic_activities_mobile/cores/widgets/section_tag.dart';
 import 'package:academic_activities_mobile/screens/events/cheer_register.dart';
 import 'package:academic_activities_mobile/screens/events/event_register.dart';
 import 'package:academic_activities_mobile/screens/events/support_register.dart';
+import 'package:academic_activities_mobile/screens/navigation.dart';
 import 'package:academic_activities_mobile/services/event_service.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -57,10 +57,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   @override
   Widget build(BuildContext context) {
     if (loading) {
-      return Scaffold(
-        backgroundColor: Colors.white,
-        body: ColorfulLoader(),
-      );
+      return Scaffold(backgroundColor: Colors.white, body: ColorfulLoader());
     }
 
     if (event == null) {
@@ -127,10 +124,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         ),
       ],
 
-      action: IconButton(
-        icon: const Icon(Icons.share_rounded, color: Colors.white),
-        onPressed: () {},
-      ),
+      
     );
   }
 
@@ -177,17 +171,16 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     if (event!["status_label"] == "Sắp diễn ra") {
       return Column(
         children: [
-          // ---------------------
-          // 🔵 ĐĂNG KÝ DỰ THI
-          // ---------------------
           SizedBox(
             width: double.infinity,
             child: PrimaryButton(
               label: "Đăng ký dự thi",
               icon: FontAwesomeIcons.userPlus,
               borderRadius: 15,
-              onPressed: () {
-                Navigator.push(
+              onPressed: () async {
+                // ✅ THÊM async
+                final result = await Navigator.push(
+                  // ✅ THÊM await
                   context,
                   MaterialPageRoute(
                     builder: (_) => EventRegisterScreen(
@@ -197,6 +190,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     ),
                   ),
                 );
+
+                // ✅ NẾU ĐĂNG KÝ THÀNH CÔNG → RELOAD
+                if (result == true) {
+                  _loadDetail();
+                }
               },
             ),
           ),
@@ -205,20 +203,18 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
           Row(
             children: [
-              // ---------------------
-              // 🟣 ĐĂNG KÝ HỖ TRỢ
               Flexible(
                 fit: FlexFit.loose,
                 child: _outlineButton(
                   "Đăng ký hỗ trợ",
                   FontAwesomeIcons.peopleCarryBox,
                   Colors.deepPurple,
-                  () {
-                    Navigator.push(
+                  () async {
+                    final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => SupportRegisterScreen(
-                          macuocthi: event!["macuocthi"], 
+                          macuocthi: event!["macuocthi"],
                           tenCuocThi: event!["tencuocthi"],
                           hoatDongs: List<Map<String, dynamic>>.from(
                             event!["hotro"] ?? [],
@@ -226,20 +222,24 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         ),
                       ),
                     );
+
+                    if (result == true) {
+                      _loadDetail();
+                    }
                   },
                 ),
               ),
 
-              SizedBox(width: 10),
-              // 🟢 ĐĂNG KÝ CỔ VŨ
+              const SizedBox(width: 10),
+
               Flexible(
                 fit: FlexFit.loose,
                 child: _outlineButton(
                   "Đăng ký cổ vũ",
                   FontAwesomeIcons.handsClapping,
                   Colors.green,
-                  () {
-                    Navigator.push(
+                  () async {
+                    final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => CheerRegisterScreen(
@@ -251,6 +251,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         ),
                       ),
                     );
+
+                    if (result == true) {
+                      _loadDetail();
+                    }
                   },
                 ),
               ),

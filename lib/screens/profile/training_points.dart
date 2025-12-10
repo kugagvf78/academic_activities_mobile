@@ -39,15 +39,13 @@ class _TrainingPointsScreenState extends State<TrainingPointsScreen>
       ),
     );
 
-    _headerSlide = Tween<Offset>(
-      begin: const Offset(0, -0.5),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _headerController,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeOutCubic),
-      ),
-    );
+    _headerSlide = Tween<Offset>(begin: const Offset(0, -0.5), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _headerController,
+            curve: const Interval(0.0, 0.6, curve: Curves.easeOutCubic),
+          ),
+        );
 
     // Cards animation
     _cardsController = AnimationController(
@@ -64,8 +62,11 @@ class _TrainingPointsScreenState extends State<TrainingPointsScreen>
       return Tween<double>(begin: 0.0, end: 1.0).animate(
         CurvedAnimation(
           parent: _cardsController,
-          curve: Interval(start.clamp(0.0, 0.6), end.clamp(0.1, 1.0),
-              curve: Curves.easeOut),
+          curve: Interval(
+            start.clamp(0.0, 0.6),
+            end.clamp(0.1, 1.0),
+            curve: Curves.easeOut,
+          ),
         ),
       );
     });
@@ -79,8 +80,11 @@ class _TrainingPointsScreenState extends State<TrainingPointsScreen>
       ).animate(
         CurvedAnimation(
           parent: _cardsController,
-          curve: Interval(start.clamp(0.0, 0.6), end.clamp(0.1, 1.0),
-              curve: Curves.easeOutCubic),
+          curve: Interval(
+            start.clamp(0.0, 0.6),
+            end.clamp(0.1, 1.0),
+            curve: Curves.easeOutCubic,
+          ),
         ),
       );
     });
@@ -167,10 +171,7 @@ class _TrainingPointsScreenState extends State<TrainingPointsScreen>
 
     return FadeTransition(
       opacity: _cardFades[index],
-      child: SlideTransition(
-        position: _cardSlides[index],
-        child: child,
-      ),
+      child: SlideTransition(position: _cardSlides[index], child: child),
     );
   }
 
@@ -216,10 +217,7 @@ class _TrainingPointsScreenState extends State<TrainingPointsScreen>
                   const SizedBox(height: 8),
                   Text(
                     "Tham gia hoạt động để tích lũy điểm!",
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade400,
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade400),
                   ),
                 ],
               ),
@@ -256,8 +254,10 @@ class _TrainingPointsScreenState extends State<TrainingPointsScreen>
               },
               borderRadius: BorderRadius.circular(10),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 9,
+                ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
@@ -396,10 +396,7 @@ class _TrainingPointsScreenState extends State<TrainingPointsScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: color.withOpacity(0.2),
-          width: 2,
-        ),
+        border: Border.all(color: color.withOpacity(0.2), width: 2),
         boxShadow: [
           BoxShadow(
             color: color.withOpacity(0.08),
@@ -502,8 +499,10 @@ class _TrainingPointsScreenState extends State<TrainingPointsScreen>
                   ),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Color(0xFF10B981), Color(0xFF059669)],
@@ -634,9 +633,7 @@ class _TrainingPointsScreenState extends State<TrainingPointsScreen>
               color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(6),
             ),
-            child: Center(
-              child: FaIcon(icon, size: 11, color: color),
-            ),
+            child: Center(child: FaIcon(icon, size: 11, color: color)),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -658,41 +655,33 @@ class _TrainingPointsScreenState extends State<TrainingPointsScreen>
     );
   }
 
-  IconData getIconByType(String loai) {
-    switch (loai.toLowerCase()) {
-      case "đạt giải":
-      case "dat giai":
-        return FontAwesomeIcons.award;
-      case "hỗ trợ":
-      case "ho tro":
-        return FontAwesomeIcons.handsHelping;
-      case "dự thi":
-      case "du thi":
-        return FontAwesomeIcons.userGraduate;
-      case "tham dự":
-      case "tham du":
-        return FontAwesomeIcons.calendarCheck;
-      default:
-        return FontAwesomeIcons.circleInfo;
-    }
+  Color getColorByType(String loai) {
+    final l = loai.toLowerCase();
+
+    if (l.contains("datgiai")) return const Color(0xFFF59E0B); // vàng
+    if (l.contains("hotro") ||
+        l.contains("hotrokythuat") ||
+        l.contains("tochuc"))
+      return const Color(0xFF7C3AED); // tím
+    if (l.contains("duthi")) return const Color(0xFF16A34A); // xanh lá
+    if (l.contains("thamdu")) return const Color(0xFF2563EB); // xanh dương
+    if (l.contains("covu")) return const Color(0xFFE11D48); // đỏ nhẹ
+
+    return Colors.grey.shade600;
   }
 
-  Color getColorByType(String loai) {
-    switch (loai.toLowerCase()) {
-      case "đạt giải":
-      case "dat giai":
-        return const Color(0xFFF59E0B);
-      case "hỗ trợ":
-      case "ho tro":
-        return const Color(0xFF7C3AED);
-      case "dự thi":
-      case "du thi":
-        return const Color(0xFF16A34A);
-      case "tham dự":
-      case "tham du":
-        return const Color(0xFF2563EB);
-      default:
-        return Colors.grey.shade600;
-    }
+  IconData getIconByType(String loai) {
+    final l = loai.toLowerCase();
+
+    if (l.contains("datgiai")) return FontAwesomeIcons.award;
+    if (l.contains("hotro") ||
+        l.contains("hotrokythuat") ||
+        l.contains("tochuc"))
+      return FontAwesomeIcons.handsHelping;
+    if (l.contains("duthi")) return FontAwesomeIcons.userGraduate;
+    if (l.contains("thamdu")) return FontAwesomeIcons.calendarCheck;
+    if (l.contains("covu")) return FontAwesomeIcons.flag;
+
+    return FontAwesomeIcons.circleInfo;
   }
 }

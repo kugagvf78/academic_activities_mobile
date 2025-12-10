@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:academic_activities_mobile/models/DangKyHoatDongFull.dart';
 import 'package:academic_activities_mobile/models/DatGiaiApi.dart';
-import 'package:academic_activities_mobile/models/HoatDongNgan.dart';
+import 'package:academic_activities_mobile/models/HoatDongHocThuat.dart';
 import 'package:dio/dio.dart';
 
 import '../models/NguoiDung.dart';
@@ -10,7 +10,6 @@ import '../models/Lop.dart';
 import '../models/DangKyCaNhan.dart';
 import '../models/DangKyDoiThi.dart';
 import '../models/DangKyHoatDong.dart';
-import '../models/DatGiai.dart';
 import '../models/DiemRenLuyen.dart';
 import 'api_service.dart';
 
@@ -42,28 +41,25 @@ class ProfileService {
         return {"success": false, "message": "Data null từ server"};
       }
 
+      final activities = (data["activities"] ?? [])
+          .map<HoatDongHocThuat>((e) => HoatDongHocThuat.fromJson(e))
+          .toList();
+
       // Parse từng phần và bắt lỗi riêng
       try {
-        print("=== PARSING USER ===");
         final user = NguoiDung.fromJson(data["user"]);
-        print("✅ User parsed OK");
 
-        print("=== PARSING PROFILE ===");
         final profile = data["profile"] != null
             ? SinhVien.fromJson(data["profile"])
             : null;
-        print("✅ Profile parsed OK");
 
-        print("=== PARSING LOP ===");
         final lop = data["profile"]?["lop"] != null
             ? Lop.fromJson(data["profile"]["lop"])
             : null;
-        print("✅ Lop parsed OK");
 
-        print("=== PARSING CERTIFICATES ===");
         final certificates = <DatGiaiApi>[];
         final rawCerts = data["certificates"] ?? [];
-        
+
         for (var item in rawCerts) {
           try {
             certificates.add(DatGiaiApi.fromJson(item));
@@ -71,23 +67,16 @@ class ProfileService {
             print("⚠️ Skip certificate: $e");
           }
         }
-        print("✅ Certificates parsed OK: ${certificates.length} items");
 
-        print("=== PARSING REGISTRATIONS ===");
         final registrations = _parseRegistrations(data["registrations"] ?? []);
-        print("✅ Registrations parsed OK: ${registrations.length} items");
 
-        print("=== PARSING COMPETITION REGISTRATIONS ===");
         final competitionRegistrations = _parseCompetition(
           data["competitionRegistrations"] ?? [],
         );
-        print("✅ Competition registrations parsed OK: ${competitionRegistrations.length} items");
 
-        print("=== PARSING DIEM REN LUYEN ===");
         final diemRenLuyen = data["diemRenLuyen"] != null
             ? DiemRenLuyen.fromJson(data["diemRenLuyen"])
             : null;
-        print("✅ Diem ren luyen parsed OK");
 
         return {
           "success": true,
@@ -95,21 +84,17 @@ class ProfileService {
             "user": user,
             "profile": profile,
             "lop": lop,
-            "activities": data["activities"] ?? [],
+            "activities": activities,
             "certificates": certificates,
             "registrations": registrations,
             "competitionRegistrations": competitionRegistrations,
             "diemRenLuyen": diemRenLuyen,
           },
         };
-        
       } catch (parseError) {
-        print("❌ PARSE ERROR: $parseError");
         return {"success": false, "message": "Lỗi parse data: $parseError"};
       }
-
     } catch (e) {
-      print("❌ PROFILE ERROR: $e");
       return {"success": false, "message": e.toString()};
     }
   }
@@ -142,7 +127,7 @@ class ProfileService {
     for (final item in raw) {
       try {
         final loaiDangKy = item["loaidangky"]?.toString();
-        
+
         if (loaiDangKy == "CaNhan") {
           results.add(DangKyCaNhan.fromJson(item));
         } else if (loaiDangKy == "DoiNhom") {
@@ -162,19 +147,27 @@ class ProfileService {
   /// ============================
   /// UPDATE AVATAR - SỬ DỤNG API /profile/avatar
   /// ============================
-  Future<Map<String, dynamic>> updateAvatar(File file) async {
+  Future<String?> updateAvatar(File file) async {
     try {
-      final form = FormData.fromMap({
+      final formData = FormData.fromMap({
         "avatar": await MultipartFile.fromFile(
           file.path,
-          filename: file.path.split('/').last,
-        ),
+        ), // ✅ Đổi từ "anhdaidien" thành "avatar"
       });
 
-      final res = await _api.post("/profile/avatar", form);
-      return res.data;
+      final res = await _api.dio.post(
+        "/profile/avatar",
+        data: formData,
+        options: Options(headers: {"Content-Type": "multipart/form-data"}),
+      );
+
+      if (res.data["success"] == true) {
+        return res.data["avatar_url"];
+      }
+      return null;
     } catch (e) {
-      return {"success": false, "message": e.toString()};
+      print("Lỗi upload avatar: $e");
+      return null;
     }
   }
 
@@ -209,6 +202,52 @@ class ProfileService {
     try {
       final res = await _api.delete("/profile/competitions/$id");
       return res.data;
+    } catch (e) {
+      return {"success": false, "message": e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> getSubmitExamForm({
+    required String id,
+    required String loaiDangKy,
+  }) async {
+    try {
+      final res = await _api.get("/profile/submit-exam/$id/$loaiDangKy");
+
+      return {
+        "success": res.data["success"] == true,
+        "data": res.data["data"],
+        "message": res.data["message"],
+      };
+    } catch (e) {
+      return {"success": false, "message": e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> submitExam({
+    required String id,
+    required String loaiDangKy,
+    required File file,
+  }) async {
+    try {
+      final formData = FormData.fromMap({
+        "filebaithi": await MultipartFile.fromFile(
+          file.path,
+          filename: file.path.split('/').last,
+        ),
+      });
+
+      final res = await _api.dio.post(
+        "/profile/submit-exam/$id/$loaiDangKy",
+        data: formData,
+        options: Options(headers: {"Content-Type": "multipart/form-data"}),
+      );
+
+      return {
+        "success": res.data["success"] == true,
+        "message": res.data["message"],
+        "file": res.data["file"],
+      };
     } catch (e) {
       return {"success": false, "message": e.toString()};
     }

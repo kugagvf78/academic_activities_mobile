@@ -1,5 +1,6 @@
 class DangKyHoatDongFull {
   final String id;
+  final String idCuocThi;      
   final String tenCuocThi;
   final String tenHoatDong;
   final String loaiHoatDong;
@@ -19,6 +20,7 @@ class DangKyHoatDongFull {
 
   DangKyHoatDongFull({
     required this.id,
+    required this.idCuocThi,   
     required this.tenCuocThi,
     required this.tenHoatDong,
     required this.loaiHoatDong,
@@ -36,6 +38,7 @@ class DangKyHoatDongFull {
   factory DangKyHoatDongFull.fromJson(Map<String, dynamic> json) {
     return DangKyHoatDongFull(
       id: json['madangkyhoatdong'] ?? "",
+      idCuocThi: json['macuocthi'] ?? "",  
       tenCuocThi: json['tencuocthi'] ?? "",
       tenHoatDong: json['tenhoatdong'] ?? "",
       loaiHoatDong: json['loaihoatdong'] ?? "",

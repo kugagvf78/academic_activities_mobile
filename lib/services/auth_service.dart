@@ -1,5 +1,6 @@
 import 'package:academic_activities_mobile/models/AuthResponse.dart';
 import 'package:dio/dio.dart';
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_service.dart';
 
@@ -9,12 +10,10 @@ class AuthService {
   Future<AuthResponse> login(String username, String password) async {
     try {
       final Response res = await _api.post("/auth/login", {
-        "TenDangNhap": username,  // ← Sửa lại theo Laravel API
-        "MatKhau": password,       // ← Sửa lại theo Laravel API
+        "TenDangNhap": username, 
+        "MatKhau": password,     
       });
 
-      print("=== LOGIN RAW ===");
-      print(res.data);
 
       final auth = AuthResponse.fromJson(res.data);
 
@@ -27,8 +26,58 @@ class AuthService {
 
       return auth;
     } catch (e) {
-      print("Login error: $e");
       rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getUserInfo() async {
+    try {
+      final Response res = await _api.get("/auth/me");
+      
+      if (res.statusCode == 200 && res.data != null) {
+        // Backend trả về: {user: {...}, detail: {...}}
+        final userData = res.data['user'];
+        
+        return {
+          'manguoidung': userData['manguoidung'],
+          'tendangnhap': userData['tendangnhap'],
+          'hoten': userData['hoten'],
+          'email': userData['email'],
+          'sodienthoai': userData['sodienthoai'],
+          'vaitro': userData['vaitro'],
+        };
+      }
+      
+      return null;
+    } catch (e) {
+      print('❌ Error getting user info: $e');
+      return null;
+    }
+  }
+
+  // ✅ DECODE JWT TOKEN (FALLBACK NẾU API FAIL)
+  Future<Map<String, dynamic>?> getUserInfoFromToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString("access_token");
+      
+      if (token == null) return null;
+      
+      // JWT format: header.payload.signature
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+      
+      // Decode payload (part[1])
+      final payload = parts[1];
+      
+      // Base64 decode
+      final normalized = base64Url.normalize(payload);
+      final decoded = utf8.decode(base64Url.decode(normalized));
+      
+      return json.decode(decoded);
+    } catch (e) {
+      print('❌ Error decoding token: $e');
+      return null;
     }
   }
 

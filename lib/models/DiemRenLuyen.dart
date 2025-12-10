@@ -1,3 +1,6 @@
+import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 class DiemRenLuyen {
   final List<DiemRLDetail> details;
   final int total;
@@ -26,6 +29,9 @@ class DiemRenLuyen {
   }
 }
 
+// ================================
+//   CHI TIẾT ĐIỂM RÈN LUYỆN
+// ================================
 class DiemRLDetail {
   final String loai;
   final String title;
@@ -33,12 +39,9 @@ class DiemRLDetail {
   final String ngay;
   final String mota;
 
-  // thêm mới
-  final String? color;
-  final String? icon;
   final Map<String, dynamic>? chiTiet;
 
-  // getter tạo ngày format
+  // format ngày dd/mm/yyyy
   String get dateFormatted {
     if (ngay.isEmpty) return "";
     try {
@@ -55,8 +58,6 @@ class DiemRLDetail {
     required this.diem,
     required this.ngay,
     required this.mota,
-    this.color,
-    this.icon,
     this.chiTiet,
   });
 
@@ -67,9 +68,10 @@ class DiemRLDetail {
       diem: double.tryParse(json['diem'].toString()) ?? 0,
       ngay: json['ngay'] ?? "",
       mota: json['mota'] ?? "",
-      color: json['color'],          // <── thêm
-      icon: json['icon'],            // <── thêm
-      chiTiet: json['chi_tiet'],     // <── thêm
+
+      chiTiet: json['chi_tiet'],
     );
   }
+
+
 }

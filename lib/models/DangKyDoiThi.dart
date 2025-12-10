@@ -1,5 +1,6 @@
 class DangKyDoiThi {
   final String id;
+  final String idcuocthi;  // Cập nhật lại từ macuocthi thành idcuocthi
   final String tenCuocThi;
   final String thoiGianBatDau;
   final String thoiGianKetThuc;
@@ -20,6 +21,7 @@ class DangKyDoiThi {
 
   DangKyDoiThi({
     required this.id,
+    required this.idcuocthi, // Cập nhật lại ở đây
     required this.tenCuocThi,
     required this.thoiGianBatDau,
     required this.thoiGianKetThuc,
@@ -42,6 +44,7 @@ class DangKyDoiThi {
   factory DangKyDoiThi.fromJson(Map<String, dynamic> json) {
     return DangKyDoiThi(
       id: json['id']?.toString() ?? '',
+      idcuocthi: json['idcuocthi']?.toString() ?? '',  // Cập nhật lấy idcuocthi từ json
       tenCuocThi: json['tencuocthi']?.toString() ?? 'Chưa có tên',
       thoiGianBatDau: json['thoigianbatdau']?.toString() ?? '',
       thoiGianKetThuc: json['thoigianketthuc']?.toString() ?? '',
@@ -65,6 +68,7 @@ class DangKyDoiThi {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'idcuocthi': idcuocthi,  // Đảm bảo truyền đúng idcuocthi vào JSON
       'tencuocthi': tenCuocThi,
       'thoigianbatdau': thoiGianBatDau,
       'thoigianketthuc': thoiGianKetThuc,

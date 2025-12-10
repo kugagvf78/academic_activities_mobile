@@ -22,10 +22,7 @@ class _SuccessToastWidget extends StatefulWidget {
   final String message;
   final VoidCallback onDismiss;
 
-  const _SuccessToastWidget({
-    required this.message,
-    required this.onDismiss,
-  });
+  const _SuccessToastWidget({required this.message, required this.onDismiss});
 
   @override
   State<_SuccessToastWidget> createState() => _SuccessToastWidgetState();
@@ -74,47 +71,52 @@ class _SuccessToastWidgetState extends State<_SuccessToastWidget>
   Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
-      child: Center(
-        child: SlideTransition(
-          position: _offsetAnimation,
-          child: FadeTransition(
-            opacity: _opacityAnimation,
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 320),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-              margin: const EdgeInsets.symmetric(horizontal: 32),
-              decoration: BoxDecoration(
-                color: Colors.green.shade600,
-                borderRadius: BorderRadius.circular(25),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.green.withOpacity(0.4),
-                    blurRadius: 30,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.check_circle_rounded,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Text(
-                      widget.message,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15.5,
-                        fontWeight: FontWeight.bold,
-                        height: 1.4,
+      child: Align(
+        alignment: Alignment.topCenter, // Chỉnh vị trí ở góc trên
+        child: Padding(
+          padding: const EdgeInsets.only(top: 60.0), // Cách 30px từ trên cùng
+          child: SlideTransition(
+            position: _offsetAnimation,
+            child: FadeTransition(
+              opacity: _opacityAnimation,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 18,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade600,
+                  borderRadius: BorderRadius.circular(25),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.green.withOpacity(0.4),
+                      blurRadius: 30,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.check_circle_rounded,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Text(
+                        widget.message,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.bold,
+                          height: 1.4,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

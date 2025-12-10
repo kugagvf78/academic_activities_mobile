@@ -17,7 +17,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   int _currentBanner = 0;
-  final CarouselSliderController _carouselController = CarouselSliderController();
+  final CarouselSliderController _carouselController =
+      CarouselSliderController();
   final EventService _eventService = EventService();
   List<CuocThi> upcomingEvents = [];
   bool _loadingEvents = true;
@@ -64,8 +65,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       }).toList();
 
       filtered.sort(
-        (a, b) => DateTime.parse(a.thoiGianBatDau!)
-            .compareTo(DateTime.parse(b.thoiGianBatDau!)),
+        (a, b) => DateTime.parse(
+          a.thoiGianBatDau!,
+        ).compareTo(DateTime.parse(b.thoiGianBatDau!)),
       );
 
       setState(() {
@@ -97,11 +99,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    Colors.white,
-                    const Color(0xFFF0F9FF),
-                    Colors.white,
-                  ],
+                  colors: [Colors.white, const Color(0xFFF0F9FF), Colors.white],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
@@ -124,86 +122,80 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildModernBanner(Size size) {
-    return SizedBox(
-      height: size.height * 0.38,
-      child: Stack(
-        children: [
-          CarouselSlider(
-            carouselController: _carouselController,
-            options: CarouselOptions(
-              height: size.height * 0.38,
-              viewportFraction: 1.0,
-              autoPlay: true,
-              autoPlayInterval: const Duration(seconds: 6),
-              autoPlayAnimationDuration: const Duration(milliseconds: 1000),
-              autoPlayCurve: Curves.easeInOutCubic,
-              onPageChanged: (index, _) => setState(() => _currentBanner = index),
-            ),
-            items: banners.map((path) {
-              return Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.asset(
-                    path,
-                    fit: BoxFit.cover,
-                    width: size.width,
-                  ),
-                  // Gradient overlay đẹp hơn
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.black.withOpacity(0.3),
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.6),
-                        ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            }).toList(),
-          ),
+    return SafeArea(
+      bottom: false, // không cần chừa khoảng dưới
+      child: Container(
+        height: size.height * 0.30, // giảm từ 0.38 xuống 0.30 cho đẹp hơn
+        margin: const EdgeInsets.only(top: 8), // tạo khoảng thở
+        child: Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(
+                0,
+              ), // để flat nếu muốn bo viền sau
+              child: CarouselSlider(
+                carouselController: _carouselController,
+                options: CarouselOptions(
+                  height: size.height * 0.30,
+                  viewportFraction: 1.0,
+                  autoPlay: true,
+                  autoPlayInterval: const Duration(seconds: 5),
+                  autoPlayAnimationDuration: const Duration(milliseconds: 900),
+                  autoPlayCurve: Curves.easeInOutCubic,
+                  onPageChanged: (index, _) =>
+                      setState(() => _currentBanner = index),
+                ),
+                items: banners.map((path) {
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.asset(path, fit: BoxFit.cover, width: size.width),
 
-          // Indicator với thiết kế mới
-          Positioned(
-            bottom: 20,
-            left: 0,
-            right: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: banners.asMap().entries.map((e) {
-                return GestureDetector(
-                  onTap: () => _carouselController.jumpToPage(e.key),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 400),
-                    curve: Curves.easeInOut,
-                    width: _currentBanner == e.key ? 32 : 8,
+                      // Gradient overlay mềm mại hơn
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.black.withOpacity(0.15),
+                              Colors.black.withOpacity(0.05),
+                              Colors.black.withOpacity(0.35),
+                            ],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList(),
+              ),
+            ),
+
+            // Indicator
+            Positioned(
+              bottom: 14,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: banners.asMap().entries.map((e) {
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 350),
+                    width: _currentBanner == e.key ? 26 : 8,
                     height: 8,
                     margin: const EdgeInsets.symmetric(horizontal: 4),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       color: _currentBanner == e.key
                           ? Colors.white
-                          : Colors.white.withOpacity(0.4),
-                      boxShadow: _currentBanner == e.key
-                          ? [
-                              BoxShadow(
-                                color: Colors.white.withOpacity(0.5),
-                                blurRadius: 8,
-                                spreadRadius: 1,
-                              ),
-                            ]
-                          : [],
+                          : Colors.white.withOpacity(0.35),
                     ),
-                  ),
-                );
-              }).toList(),
+                  );
+                }).toList(),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -218,10 +210,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF3B82F6),
-                  const Color(0xFF2563EB),
-                ],
+                colors: [const Color(0xFF3B82F6), const Color(0xFF2563EB)],
               ),
               borderRadius: BorderRadius.circular(30),
               boxShadow: [
@@ -266,11 +255,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           // Tiêu đề chính
           ShaderMask(
             shaderCallback: (bounds) => const LinearGradient(
-              colors: [
-                Color(0xFF1E40AF),
-                Color(0xFF3B82F6),
-                Color(0xFF06B6D4),
-              ],
+              colors: [Color(0xFF1E40AF), Color(0xFF3B82F6), Color(0xFF06B6D4)],
             ).createShader(bounds),
             child: const Text(
               "Cuộc thi Học thuật",
@@ -465,23 +450,41 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildStatItem("15+", "Cuộc thi", FontAwesomeIcons.trophy, const Color(0xFF3B82F6)),
-          _buildStatItem("500+", "Sinh viên", FontAwesomeIcons.userGraduate, const Color(0xFF06B6D4)),
-          _buildStatItem("50+", "Giải thưởng", FontAwesomeIcons.award, const Color(0xFF8B5CF6)),
+          _buildStatItem(
+            "15+",
+            "Cuộc thi",
+            FontAwesomeIcons.trophy,
+            const Color(0xFF3B82F6),
+          ),
+          _buildStatItem(
+            "500+",
+            "Sinh viên",
+            FontAwesomeIcons.userGraduate,
+            const Color(0xFF06B6D4),
+          ),
+          _buildStatItem(
+            "50+",
+            "Giải thưởng",
+            FontAwesomeIcons.award,
+            const Color(0xFF8B5CF6),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildStatItem(String value, String label, IconData icon, Color color) {
+  Widget _buildStatItem(
+    String value,
+    String label,
+    IconData icon,
+    Color color,
+  ) {
     return Column(
       children: [
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [color, color.withOpacity(0.7)],
-            ),
+            gradient: LinearGradient(colors: [color, color.withOpacity(0.7)]),
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
@@ -550,7 +553,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFF3B82F6).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
@@ -574,12 +580,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           _loadingEvents
               ? const Center(child: CircularProgressIndicator())
               : upcomingEvents.isEmpty
-                  ? _buildEmptyState()
-                  : Column(
-                      children: upcomingEvents
-                          .map((e) => _buildEventCard(e))
-                          .toList(),
-                    ),
+              ? _buildEmptyState()
+              : Column(
+                  children: upcomingEvents
+                      .map((e) => _buildEventCard(e))
+                      .toList(),
+                ),
         ],
       ),
     );
@@ -637,7 +643,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   children: [
                     // Badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [Color(0xFF3B82F6), Color(0xFF06B6D4)],
@@ -700,7 +709,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                         const Spacer(),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(12),
@@ -717,7 +729,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => EventDetailScreen(id: e.maCuocThi!),
+                                  builder: (context) =>
+                                      EventDetailScreen(id: e.maCuocThi!),
                                 ),
                               );
                             },
@@ -763,7 +776,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
       child: Column(
         children: [
-          Icon(FontAwesomeIcons.calendarDays, size: 48, color: Colors.grey[400]),
+          Icon(
+            FontAwesomeIcons.calendarDays,
+            size: 48,
+            color: Colors.grey[400],
+          ),
           const SizedBox(height: 16),
           Text(
             "Chưa có sự kiện sắp diễn ra",
@@ -811,7 +828,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           _buildMainFeature(
             icon: FontAwesomeIcons.trophy,
             title: "Đăng ký cuộc thi dễ dàng",
-            description: "Tìm kiếm và đăng ký tham gia các cuộc thi chỉ với vài thao tác đơn giản",
+            description:
+                "Tìm kiếm và đăng ký tham gia các cuộc thi chỉ với vài thao tác đơn giản",
             gradient: [const Color(0xFF3B82F6), const Color(0xFF2563EB)],
           ),
 
@@ -820,7 +838,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           _buildMainFeature(
             icon: FontAwesomeIcons.clockRotateLeft,
             title: "Theo dõi tiến trình & lịch thi",
-            description: "Cập nhật lịch trình, nhận thông báo và quản lý thời gian thi cử hiệu quả",
+            description:
+                "Cập nhật lịch trình, nhận thông báo và quản lý thời gian thi cử hiệu quả",
             gradient: [const Color(0xFF06B6D4), const Color(0xFF0891B2)],
           ),
 
@@ -829,7 +848,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           _buildMainFeature(
             icon: FontAwesomeIcons.award,
             title: "Nhận chứng nhận & thành tích",
-            description: "Lưu trữ chứng chỉ điện tử và xây dựng hồ sơ thành tích học thuật",
+            description:
+                "Lưu trữ chứng chỉ điện tử và xây dựng hồ sơ thành tích học thuật",
             gradient: [const Color(0xFF8B5CF6), const Color(0xFF7C3AED)],
           ),
 
@@ -1047,7 +1067,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildAchievementItem(String image, String value, String label, Color color) {
+  Widget _buildAchievementItem(
+    String image,
+    String value,
+    String label,
+    Color color,
+  ) {
     return Column(
       children: [
         Container(
@@ -1087,11 +1112,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFF1E40AF),
-            Color(0xFF3B82F6),
-            Color(0xFF06B6D4),
-          ],
+          colors: [Color(0xFF1E40AF), Color(0xFF3B82F6), Color(0xFF06B6D4)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -1176,10 +1197,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.15),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
       ),
       child: Row(
         children: [
@@ -1215,19 +1233,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.2),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.3),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
           onTap: () {},
-          child: Center(
-            child: Icon(icon, color: Colors.white, size: 20),
-          ),
+          child: Center(child: Icon(icon, color: Colors.white, size: 20)),
         ),
       ),
     );

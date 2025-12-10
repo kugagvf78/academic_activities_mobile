@@ -82,7 +82,7 @@ class LabeledInput extends StatelessWidget {
 
             // ← THÊM STYLE CHO DISABLED
             filled: !enabled,
-            fillColor: !enabled ? Colors.grey.shade100 : null,
+            fillColor: !enabled ? Colors.grey.shade50 : null,
 
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
