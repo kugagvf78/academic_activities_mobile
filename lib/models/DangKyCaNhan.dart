@@ -1,0 +1,83 @@
+class DangKyCaNhan {
+  final String id;
+  final String idcuocthi;  // Cập nhật lại từ macuocthi thành idcuocthi
+  final String tenCuocThi;
+  final String thoiGianBatDau;
+  final String thoiGianKetThuc;
+  final String? trangThaiCuocThi;
+  final String ngayDangKy;
+  final String? trangthai;
+  final String loaiDangKy;
+  final String? maBaiThi;
+  final String? thoiGianNop;
+  final String? trangThaiNop;
+  final String status;
+  final String statusLabel;
+  final String statusColor;
+  final bool canCancel;
+  final bool canSubmit;
+
+  DangKyCaNhan({
+    required this.id,
+    required this.idcuocthi, // Cập nhật lại ở đây
+    required this.tenCuocThi,
+    required this.thoiGianBatDau,
+    required this.thoiGianKetThuc,
+    this.trangThaiCuocThi,
+    required this.ngayDangKy,
+    this.trangthai,
+    required this.loaiDangKy,
+    this.maBaiThi,
+    this.thoiGianNop,
+    this.trangThaiNop,
+    required this.status,
+    required this.statusLabel,
+    required this.statusColor,
+    required this.canCancel,
+    required this.canSubmit,
+  });
+
+  factory DangKyCaNhan.fromJson(Map<String, dynamic> json) {
+    return DangKyCaNhan(
+      id: json['id']?.toString() ?? '',
+      idcuocthi: json['idcuocthi']?.toString() ?? '',  // Cập nhật lấy idcuocthi từ json
+      tenCuocThi: json['tencuocthi']?.toString() ?? 'Chưa có tên',
+      thoiGianBatDau: json['thoigianbatdau']?.toString() ?? '',
+      thoiGianKetThuc: json['thoigianketthuc']?.toString() ?? '',
+      trangThaiCuocThi: json['trangthaicuocthi']?.toString(),
+      ngayDangKy: json['ngaydangky']?.toString() ?? '',
+      trangthai: json['trangthai']?.toString(),
+      loaiDangKy: json['loaidangky']?.toString() ?? 'CaNhan',
+      maBaiThi: json['mabaithi']?.toString(),
+      thoiGianNop: json['thoigiannop']?.toString(),
+      trangThaiNop: json['trangthainop']?.toString(),
+      status: json['status']?.toString() ?? 'ended',
+      statusLabel: json['statusLabel']?.toString() ?? 'Đã kết thúc',
+      statusColor: json['statusColor']?.toString() ?? 'gray',
+      canCancel: json['canCancel'] == true,
+      canSubmit: json['canSubmit'] == true,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'idcuocthi': idcuocthi,  // Đảm bảo truyền đúng idcuocthi vào JSON
+      'tencuocthi': tenCuocThi,
+      'thoigianbatdau': thoiGianBatDau,
+      'thoigianketthuc': thoiGianKetThuc,
+      'trangthaicuocthi': trangThaiCuocThi,
+      'ngaydangky': ngayDangKy,
+      'trangthai': trangthai,
+      'loaidangky': loaiDangKy,
+      'mabaithi': maBaiThi,
+      'thoigiannop': thoiGianNop,
+      'trangthainop': trangThaiNop,
+      'status': status,
+      'statusLabel': statusLabel,
+      'statusColor': statusColor,
+      'canCancel': canCancel,
+      'canSubmit': canSubmit,
+    };
+  }
+}
